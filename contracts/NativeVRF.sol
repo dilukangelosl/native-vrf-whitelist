@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Native VRF Contracts (last updated v0.0.1) (NativeVRF.sol)
-pragma solidity 0.8.4;
+pragma solidity 0.8.30;
 
 import "./libraries/Converter.sol";
 import "./libraries/Signature.sol";
@@ -13,6 +13,10 @@ import "./libraries/Signature.sol";
  * It allows DAO control, which provides high level of decentralization.
  */
 contract NativeVRF {
+    // Access control variables
+    address public owner;
+    mapping(address => bool) public whitelist;
+
     // Difficulty variables
     uint256 public constant MIN_DIFFICULTY = 1000;
     uint256 public expectedFulfillTime = 15; // seconds
@@ -36,11 +40,26 @@ contract NativeVRF {
     // Events
     event RandomRequested(uint256 indexed requestId);
     event RandomFullfilled(uint256 indexed requestId, uint256 random);
+    event AddressWhitelisted(address indexed addr);
+    event AddressDelisted(address indexed addr);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Modifiers
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyWhitelisted() {
+        require(whitelist[msg.sender], "Address not whitelisted");
+        _;
+    }
 
     /**
      * @dev Initialize the first random result to generate later random numbers
      */
     constructor(uint256 seed) {
+        owner = msg.sender;
         requestInitializers[0] = msg.sender;
         randomResults[0] = uint256(
             keccak256(
@@ -65,9 +84,10 @@ contract NativeVRF {
     /**
      * @dev Request random numbers by putting rewards to the smart contract
      * Requirements:
+     * - The caller must be whitelisted
      * - The reward per request must be grater than the `minReward` value
      */
-    function requestRandom(uint256 numRequest) external payable returns (uint256[] memory) {
+    function requestRandom(uint256 numRequest) external payable onlyWhitelisted returns (uint256[] memory) {
         require(numRequest >= 1, "At least one request");
 
         uint256[] memory requestIds = new uint256[](numRequest);
@@ -85,6 +105,48 @@ contract NativeVRF {
         currentRequestId = currentRequestId + numRequest;
 
         return requestIds;
+    }
+
+    /**
+     * @dev Add an address to the whitelist
+     * Requirements:
+     * - Only the owner can call this function
+     */
+    function whitelistAddress(address addr) external onlyOwner {
+        require(addr != address(0), "Cannot whitelist zero address");
+        require(!whitelist[addr], "Address already whitelisted");
+        whitelist[addr] = true;
+        emit AddressWhitelisted(addr);
+    }
+
+    /**
+     * @dev Remove an address from the whitelist
+     * Requirements:
+     * - Only the owner can call this function
+     */
+    function delistAddress(address addr) external onlyOwner {
+        require(whitelist[addr], "Address not whitelisted");
+        whitelist[addr] = false;
+        emit AddressDelisted(addr);
+    }
+
+    /**
+     * @dev Check if an address is whitelisted
+     */
+    function isWhitelisted(address addr) external view returns (bool) {
+        return whitelist[addr];
+    }
+
+    /**
+     * @dev Transfer ownership to a new owner
+     * Requirements:
+     * - Only the owner can call this function
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "Cannot transfer to zero address");
+        address previousOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(previousOwner, newOwner);
     }
 
     /**
