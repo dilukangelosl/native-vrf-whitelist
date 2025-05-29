@@ -53,6 +53,45 @@ npx hardhat run scripts/examples/request.ts --network <target-network>
 npx hardhat run scripts/examples/record.ts --network <target-network>
 ```
 
+## PrizeDrawConsumer Contract
+
+The [`PrizeDrawConsumer.sol`](contracts/examples/PrizeDrawConsumer.sol) is a tutorial-style contract that demonstrates how to use Native VRF for weighted prize selection. This contract showcases:
+
+### **Features**
+- **Percentage-based Prize Selection**: Configure prizes with specific probability weights (e.g., 30%, 20%, 10%, 8%, 2%)
+- **Gas-efficient Algorithm**: O(n) cumulative weight selection for optimal performance
+- **Multi-user Support**: Handle simultaneous draw requests from multiple players
+- **Flexible Configuration**: Create custom prize draws with different probability distributions
+- **Owner Management**: Administrative controls for draw configuration and fund management
+
+### **Example Prize Configuration**
+```solidity
+Prize 1: Grand Prize - Gold Coin (30% chance, 1 ETH value)
+Prize 2: Second Prize - Silver Medal (20% chance, 0.5 ETH value)
+Prize 3: Third Prize - Bronze Trophy (10% chance, 0.1 ETH value)
+Prize 4: Fourth Prize - Lucky Charm (8% chance, 0.05 ETH value)
+Prize 5: Fifth Prize - Participation Token (2% chance, 0.01 ETH value)
+No Prize: 30% chance
+```
+
+### **Deploy PrizeDrawConsumer**
+```shell
+npx hardhat run scripts/deploy/prize-draw-consumer.ts --network <target-network>
+```
+
+### **Test PrizeDrawConsumer**
+Run comprehensive tests including multi-user scenarios:
+```shell
+npx hardhat test test/PrizeDrawConsumer.test.ts
+```
+
+The test suite includes:
+- **Multi-user testing**: 4 different player addresses testing simultaneous interactions
+- **Prize selection validation**: Statistical verification over 1000+ simulations
+- **Gas efficiency tests**: Ensures reasonable gas costs (<200k for requests, <50k for selection)
+- **Edge case handling**: Tests minimum/maximum weights and invalid inputs
+- **Integration testing**: Validates proper Native VRF integration
+
 ## Changelog
 
 ### Latest Improvements
