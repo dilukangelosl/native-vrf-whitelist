@@ -32,6 +32,8 @@ contract NativeVRF {
     uint256 public latestFulfillId = 0;
     mapping(uint256 => uint256) public randomResults; // mapping of request id and generated random number
     mapping(uint256 => address) public requestInitializers; // mapping of request id and random requester address
+    mapping(address => uint256) public addressNonces; // nonce per address to prevent replay attacks
+    uint256 public globalSalt; // global salt that changes with each fulfillment
 
     // Incentive variables
     uint256 public minReward = 0.0001 ether; // minumum reward per request
@@ -61,6 +63,20 @@ contract NativeVRF {
     constructor(uint256 seed) {
         owner = msg.sender;
         requestInitializers[0] = msg.sender;
+        
+        // Initialize global salt
+        globalSalt = uint256(
+            keccak256(
+                abi.encode(
+                    seed,
+                    block.timestamp,
+                    block.prevrandao,
+                    msg.sender,
+                    address(this)
+                )
+            )
+        );
+        
         randomResults[0] = uint256(
             keccak256(
                 abi.encode(
@@ -72,7 +88,8 @@ contract NativeVRF {
                     block.timestamp,
                     block.prevrandao,
                     blockhash(block.number - 1),
-                    address(this)
+                    address(this),
+                    globalSalt
                 )
             )
         );
@@ -150,6 +167,22 @@ contract NativeVRF {
     }
 
     /**
+     * @dev Update global salt for additional entropy (only owner)
+     * Requirements:
+     * - Only the owner can call this function
+     */
+    function updateGlobalSalt(uint256 newSalt) external onlyOwner {
+        globalSalt = uint256(keccak256(abi.encode(globalSalt, newSalt, block.timestamp, msg.sender)));
+    }
+
+    /**
+     * @dev Get current nonce for an address
+     */
+    function getNonce(address addr) external view returns (uint256) {
+        return addressNonces[addr];
+    }
+
+    /**
      * @dev Fulfill random numbers by calculating signatures off-chain
      * Requirements:
      * - The length of all data must be equal
@@ -215,27 +248,73 @@ contract NativeVRF {
         // require(sigValue < threshold, "Invalid random input");
         require(sigValue % difficulty == 0, "Invalid random input");
 
-        uint256 prevRand = randomResults[_requestId - 1];
+        // Increment nonce for the fulfiller to prevent replay attacks
+        addressNonces[msg.sender]++;
+        
+        // Update global salt for additional entropy
+        globalSalt = uint256(keccak256(abi.encode(globalSalt, block.timestamp, msg.sender)));
 
-        uint256 random = uint256(
-            keccak256(
-                abi.encode(
-                    _randInput,
-                    prevRand,
-                    requestInitializers[_requestId],
-                    tx.gasprice,
-                    block.number,
-                    block.timestamp,
-                    block.prevrandao,
-                    blockhash(block.number - 1),
-                    address(this)
-                )
-            )
-        );
+        // Generate random with improved entropy in multiple stages to avoid stack depth issues
+        uint256 random = _generateImprovedRandom(_requestId, _randInput, _signature);
 
         randomResults[_requestId] = random;
 
         emit RandomFullfilled(_requestId, random);
+    }
+
+    /**
+     * @dev Generate improved random number with enhanced entropy sources
+     * Split into separate function to avoid stack too deep error
+     */
+    function _generateImprovedRandom(
+        uint256 _requestId,
+        uint256 _randInput,
+        bytes memory _signature
+    ) private view returns (uint256) {
+        // Get multiple previous random results for better entropy mixing
+        uint256 prevRand1 = randomResults[_requestId - 1];
+        uint256 prevRand2 = _requestId >= 2 ? randomResults[_requestId - 2] : randomResults[0];
+        uint256 prevRand3 = _requestId >= 3 ? randomResults[_requestId - 3] : randomResults[0];
+
+        // First stage entropy mixing
+        bytes32 stage1Hash = keccak256(
+            abi.encode(
+                _randInput,
+                prevRand1,
+                prevRand2,
+                prevRand3,
+                requestInitializers[_requestId],
+                msg.sender,
+                addressNonces[msg.sender]
+            )
+        );
+
+        // Second stage entropy mixing with block data
+        bytes32 stage2Hash = keccak256(
+            abi.encode(
+                stage1Hash,
+                globalSalt,
+                block.number,
+                block.timestamp,
+                block.prevrandao,
+                block.coinbase,
+                blockhash(block.number - 1)
+            )
+        );
+
+        // Final stage with transaction data and signature
+        return uint256(
+            keccak256(
+                abi.encode(
+                    stage2Hash,
+                    tx.gasprice,
+                    tx.origin,
+                    gasleft(),
+                    address(this),
+                    _signature
+                )
+            )
+        );
     }
 
     /**
@@ -259,12 +338,16 @@ contract NativeVRF {
         view
         returns (bytes32)
     {
-        uint256 prevRand = _requestId > 0 ? randomResults[_requestId - 1] : 0; 
+        uint256 prevRand = _requestId > 0 ? randomResults[_requestId - 1] : 0;
         return
             keccak256(
                 abi.encodePacked(
                     prevRand,
-                    _randInput
+                    _randInput,
+                    _requestId,
+                    msg.sender,
+                    addressNonces[msg.sender],
+                    block.number
                 )
             );
     }
