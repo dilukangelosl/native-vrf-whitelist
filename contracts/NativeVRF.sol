@@ -70,7 +70,7 @@ contract NativeVRF {
                     tx.gasprice,
                     block.number,
                     block.timestamp,
-                    block.difficulty,
+                    block.prevrandao,
                     blockhash(block.number - 1),
                     address(this)
                 )
@@ -226,7 +226,7 @@ contract NativeVRF {
                     tx.gasprice,
                     block.number,
                     block.timestamp,
-                    block.difficulty,
+                    block.prevrandao,
                     blockhash(block.number - 1),
                     address(this)
                 )
