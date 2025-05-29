@@ -7,7 +7,7 @@ This project aims to support random number generation on Ethereum compatible cha
 ## Setup
 1. Clone this repository
 ```shell
-git clone https://github.com/Native-VRF/native-vrf.git
+git clone https://github.com/dilukangelosl/native-vrf-whitelist
 ```
 2. Copy the `.env.example` file and rename to `.env`
 ```shell
@@ -52,6 +52,48 @@ npx hardhat run scripts/examples/request.ts --network <target-network>
 ```shell
 npx hardhat run scripts/examples/record.ts --network <target-network>
 ```
+
+## Changelog
+
+### Latest Improvements
+
+#### feat: enhance VRF randomness generation with multi-stage entropy mixing
+
+- Add address nonces to prevent replay attacks
+- Implement global salt that updates per fulfillment
+- Use multiple previous random results for better entropy
+- Split random generation into 3 stages to avoid stack depth
+- Include additional entropy sources (tx.origin, block.coinbase, gasleft)
+- Enhance message hash with more unique identifiers
+- Add owner functions for global salt management
+
+This significantly improves randomness quality and prevents similar results
+
+#### fix: replace deprecated block.difficulty with block.prevrandao
+
+- Updated constructor random seed generation (line 73)
+- Updated fullfillRandomnessInternal random generation (line 229)
+- Fixes Solidity 0.8.30 compiler warnings about deprecated block.difficulty
+- Maintains same entropy level for random number generation
+
+#### NativeVRF.sol - Added Whitelist Access Control
+
+**Owner System**: Contract deployer becomes owner with full administrative control
+
+**Whitelist Mapping**: `mapping(address => bool) public whitelist` tracks approved addresses
+
+**Access Restriction**: `requestRandom()` now requires `onlyWhitelisted` modifier
+
+**Management Functions**:
+- `whitelistAddress(address addr)` - Owner adds addresses to whitelist
+- `delistAddress(address addr)` - Owner removes addresses from whitelist
+- `isWhitelisted(address addr)` - Check whitelist status
+- `transferOwnership(address newOwner)` - Transfer ownership
+
+#### INativeVRF.sol - Updated Interface
+
+- Added new function signatures for whitelist management
+- Added events: `AddressWhitelisted`, `AddressDelisted`, `OwnershipTransferred`
 
 ## Full article
 You can read full article that explains the building blocks and analysis of Native VRF and other RNGs. https://www.mdpi.com/2079-8954/11/7/326 
