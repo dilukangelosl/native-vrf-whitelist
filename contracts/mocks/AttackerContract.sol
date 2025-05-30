@@ -13,28 +13,28 @@ contract AttackerContract {
     uint256 public attackCount;
     uint256 public maxAttacks = 3;
     bool public attacking = false;
-    
+
     constructor(address _raffleContract) {
         raffleContract = RaffleOnape(_raffleContract);
     }
-    
+
     function setAttackParams(uint256 _raffleId, uint256 _maxAttacks) external {
         attackRaffleId = _raffleId;
         maxAttacks = _maxAttacks;
         attackCount = 0;
     }
-    
+
     function startAttack() external payable {
         attacking = true;
         attackCount = 0;
         raffleContract.buyTickets{value: msg.value}(attackRaffleId, 1);
     }
-    
+
     function stopAttack() external {
         attacking = false;
         attackCount = 0;
     }
-    
+
     // Reentrancy attack on receive
     receive() external payable {
         if (attacking && attackCount < maxAttacks) {
@@ -47,7 +47,7 @@ contract AttackerContract {
             }
         }
     }
-    
+
     // Reentrancy attack on fallback
     fallback() external payable {
         if (attacking && attackCount < maxAttacks) {
@@ -60,7 +60,7 @@ contract AttackerContract {
             }
         }
     }
-    
+
     // Function to test reentrancy on createRaffle
     function attackCreateRaffle(
         uint8 _prizeType,
@@ -84,16 +84,29 @@ contract AttackerContract {
             _ticketPrice,
             _maxTicketsPerUser,
             _totalMaxTickets,
+            1,
             _duration
         );
     }
-    
+
     // Allow contract to receive tokens
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
         return this.onERC1155Received.selector;
     }
-    
-    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external pure returns (bytes4) {
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 }

@@ -76,6 +76,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           );
 
@@ -121,6 +122,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           );
 
@@ -152,6 +154,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           );
 
@@ -186,6 +189,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           );
 
@@ -202,6 +206,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           );
 
@@ -224,6 +229,7 @@ describe("RaffleCreation", function () {
               params.ticketPrice,
               params.maxTicketsPerUser,
               params.totalMaxTickets,
+              0,
               params.duration
             )
         )
@@ -252,6 +258,7 @@ describe("RaffleCreation", function () {
             0, // Invalid ticket price
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           )
         ).to.be.revertedWith("Invalid ticket price");
@@ -271,6 +278,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             0 // Invalid duration
           )
         ).to.be.revertedWith("Invalid duration");
@@ -290,6 +298,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             0, // Invalid max tickets per user
             params.totalMaxTickets,
+            0,
             params.duration
           )
         ).to.be.revertedWith("Invalid max tickets per user");
@@ -316,6 +325,7 @@ describe("RaffleCreation", function () {
               params.ticketPrice,
               params.maxTicketsPerUser,
               params.totalMaxTickets,
+              0,
               params.duration
             )
         ).to.be.reverted;
@@ -335,6 +345,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           )
         ).to.be.reverted;
@@ -354,6 +365,7 @@ describe("RaffleCreation", function () {
             params.ticketPrice,
             params.maxTicketsPerUser,
             params.totalMaxTickets,
+            0,
             params.duration
           )
         ).to.be.reverted;

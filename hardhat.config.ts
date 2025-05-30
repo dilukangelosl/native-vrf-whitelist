@@ -39,6 +39,10 @@ const config: HardhatUserConfig = {
       url: process.env.ROPSTEN_URL || "",
       accounts: accountUtils.getAccounts(),
     },
+    apechain: {
+      url: "https://apechain.calderachain.xyz/http",
+      accounts: accountUtils.getAccounts(),
+    },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
       accounts: accountUtils.getAccounts(),
@@ -57,7 +61,19 @@ const config: HardhatUserConfig = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      apechain: "HTY6C4S9H7TW8Y5RAN7T864KKAWKGNEEDW", // Apechain doesn't require a real API key
+    },
+    customChains: [
+      {
+        network: "apechain",
+        chainId: 33139,
+        urls: {
+          apiURL: "https://api.apescan.io/api",
+          browserURL: "https://apechain.calderachain.xyz",
+        },
+      },
+    ],
   },
 };
 

@@ -1,9 +1,92 @@
+
+
+// Sources flattened with hardhat v2.24.1 https://hardhat.org
+
 // SPDX-License-Identifier: MIT
+
+// File contracts/libraries/Converter.sol
+
+// Original license: SPDX_License_Identifier: MIT
+pragma solidity ^0.8.0;
+
+library Converter {
+    function toUint256(bytes memory _bytes)
+        internal
+        pure
+        returns (uint256 value)
+    {
+        assembly {
+            value := mload(add(_bytes, 0x20))
+        }
+    }
+}
+
+
+// File contracts/libraries/Signature.sol
+
+// Original license: SPDX_License_Identifier: MIT
+pragma solidity ^0.8.0;
+
+library Signature {
+    function getEthSignedMessageHash(bytes32 _messageHash)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return
+            keccak256(
+                abi.encodePacked(
+                    "\x19Ethereum Signed Message:\n32",
+                    _messageHash
+                )
+            );
+    }
+
+    function verify(
+        address _signer,
+        bytes32 _messageHash,
+        bytes memory signature
+    ) internal pure returns (bool) {
+        bytes32 ethSignedMessageHash = getEthSignedMessageHash(_messageHash);
+
+        return recoverSigner(ethSignedMessageHash, signature) == _signer;
+    }
+
+    function recoverSigner(
+        bytes32 _ethSignedMessageHash,
+        bytes memory _signature
+    ) internal pure returns (address) {
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+
+        return ecrecover(_ethSignedMessageHash, v, r, s);
+    }
+
+    function splitSignature(bytes memory sig)
+        internal
+        pure
+        returns (
+            bytes32 r,
+            bytes32 s,
+            uint8 v
+        )
+    {
+        require(sig.length == 65, "invalid signature length");
+
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+}
+
+
+// File contracts/NativeVRF.sol
+
+// Original license: SPDX_License_Identifier: MIT
 // Native VRF Contracts (last updated v0.0.1) (NativeVRF.sol)
 pragma solidity 0.8.30;
 
-import "./libraries/Converter.sol";
-import "./libraries/Signature.sol";
 
 /**
  * @title NativeVRF

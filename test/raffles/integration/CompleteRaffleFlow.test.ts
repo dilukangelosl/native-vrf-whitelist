@@ -257,6 +257,7 @@ describe("CompleteRaffleFlow", function () {
           ethers.utils.parseEther("0.1"),
           5,
           10, // Only 10 total tickets
+          0,
           3600
         );
 
@@ -295,8 +296,6 @@ describe("CompleteRaffleFlow", function () {
     it("Should handle multiple concurrent raffles", async function () {
       const { raffleContract, mockERC20, mockERC721, mockVRF, accounts } =
         fixtures;
-
-      console.log("=== STARTING CONCURRENT RAFFLES TEST (SIMPLE VERSION) ===");
 
       try {
         // Create ERC20 raffle
@@ -533,8 +532,8 @@ describe("CompleteRaffleFlow", function () {
           .finalizeRaffle(erc721RaffleId);
 
         // Verify both completed
-         raffle1 = await raffleContract.getRaffle(erc20RaffleId);
-         raffle2 = await raffleContract.getRaffle(erc721RaffleId);
+        raffle1 = await raffleContract.getRaffle(erc20RaffleId);
+        raffle2 = await raffleContract.getRaffle(erc721RaffleId);
 
         expect(raffle1.winner).to.not.equal(ethers.constants.AddressZero);
         expect(raffle2.winner).to.not.equal(ethers.constants.AddressZero);

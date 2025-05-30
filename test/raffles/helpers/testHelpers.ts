@@ -130,6 +130,7 @@ export async function createSampleRaffle(
       params.ticketPrice,
       params.maxTicketsPerUser,
       params.totalMaxTickets,
+      5, // minTicketsNeededToDraw - default to 5
       params.duration
     );
 

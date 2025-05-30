@@ -1,0 +1,44 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: FireFliesToken
+    network: bsc
+    source:
+      address: "0x870748bd3e8e2F5569ea47b155d09d3225f8B4a6"
+      abi: FireFliesToken
+      startBlock: 44173074
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - EthWithdrawn
+        - OwnershipTransferred
+        - TaxesRemoved
+        - TokensBurned
+        - TokensRecovered
+        - Transfer
+      abis:
+        - name: FireFliesToken
+          file: ./abis/FireFliesToken.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: EthWithdrawn(indexed address,uint256)
+          handler: handleEthWithdrawn
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: TaxesRemoved()
+          handler: handleTaxesRemoved
+        - event: TokensBurned(uint256)
+          handler: handleTokensBurned
+        - event: TokensRecovered(indexed address,uint256)
+          handler: handleTokensRecovered
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/fire-flies-token.ts
