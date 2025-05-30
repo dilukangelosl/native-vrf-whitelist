@@ -6,13 +6,16 @@ import "../interfaces/INativeVRF.sol";
 /**
  * @title PrizeDrawConsumer
  * @dev A tutorial contract that demonstrates how to use Native VRF for weighted prize selection.
- * 
+ *
+ * @author Diluk Angelo (@cryptoangelodev)
+ * @notice This is a fork of https://github.com/Native-VRF/native-vrf
+ *
  * This contract shows how to:
  * 1. Request randomness from Native VRF
  * 2. Use the random number to select prizes based on percentage weights
  * 3. Implement gas-efficient weighted selection algorithm
  * 4. Handle multiple prize draws with different configurations
- * 
+ *
  * Example Prize Configuration:
  * - Prize 1: 30% chance (weight: 3000)
  * - Prize 2: 20% chance (weight: 2000)
@@ -20,7 +23,7 @@ import "../interfaces/INativeVRF.sol";
  * - Prize 4: 8% chance (weight: 800)
  * - Prize 5: 2% chance (weight: 200)
  * - No Prize: 30% chance (remaining weight: 3000)
- * 
+ *
  * Total weight: 10000 (representing 100.00%)
  */
 contract PrizeDrawConsumer {

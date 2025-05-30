@@ -11,6 +11,9 @@ import "./libraries/Signature.sol";
  * random number generation. People can use this contract as a center to generate random numbers. It does not require any hardware
  * specifics to setup a random request and fulfillments. This means that the contract can be freely deployed in any new EVM blockchains.
  * It allows DAO control, which provides high level of decentralization.
+ *
+ * @author Diluk Angelo (@cryptoangelodev)
+ * @notice Enhanced fork of https://github.com/Native-VRF/native-vrf
  */
 contract NativeVRF {
     // Access control variables
