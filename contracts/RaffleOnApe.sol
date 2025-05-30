@@ -1,0 +1,358 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.30;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+// Interface for NativeVRF
+interface INativeVRF {
+    function requestRandom(uint256 numRequest) external payable returns (uint256[] memory);
+    function randomResults(uint256 requestId) external view returns (uint256);
+    function isWhitelisted(address addr) external view returns (bool);
+}
+
+/**
+ * @title RaffleOnApe
+ * @dev Ultra gas-efficient raffle contract with NativeVRF integration
+ * @author Diluk Angelo (@cryptoangelodev)
+ * @notice Gas Opimized Raffle Contract using NativeVRF for random number generation
+ * @dev Supports ERC20, ERC721, and ERC1155 prizes
+ */
+
+contract RaffleOnape is Ownable, ReentrancyGuard {
+    
+    // Prize types
+    enum PrizeType { ERC20, ERC721, ERC1155 }
+    
+    // Raffle status
+    enum RaffleStatus { ACTIVE, DRAWN, CANCELLED }
+    
+    // Packed raffle struct for gas optimization
+    struct Raffle {
+        address creator;           // 20 bytes
+        address prizeContract;     // 20 bytes  
+        address paymentToken;      // 20 bytes (address(0) for ETH)
+        address winner;            // 20 bytes
+        uint128 prizeAmount;       // 16 bytes (for ERC20 amounts)
+        uint128 ticketPrice;       // 16 bytes
+        uint64 prizeTokenId;       // 8 bytes (for NFT token IDs)
+        uint32 maxTicketsPerUser;  // 4 bytes
+        uint32 totalMaxTickets;    // 4 bytes (0 = unlimited)
+        uint32 currentTickets;     // 4 bytes
+        uint32 endTime;            // 4 bytes
+        uint8 prizeType;           // 1 byte (PrizeType enum)
+        uint8 status;              // 1 byte (RaffleStatus enum)
+    }
+    
+    // Storage variables
+    INativeVRF public nativeVRF;
+    uint256 public raffleCounter;
+    uint256 public feePercentage = 7; // 7% default fee
+    
+    // Mappings
+    mapping(uint256 => Raffle) public raffles;
+    mapping(uint256 => uint256) public raffleVRFRequests; // raffleId => VRF requestId
+    mapping(uint256 => mapping(address => uint32)) public userTickets; // raffleId => user => ticket count
+    mapping(uint256 => address[]) public raffleParticipants; // raffleId => participants array
+    
+    // Events
+    event RaffleCreated(uint256 indexed raffleId, address indexed creator, address prizeContract, uint256 prizeAmount);
+    event TicketPurchased(uint256 indexed raffleId, address indexed buyer, uint32 quantity);
+    event RaffleDrawn(uint256 indexed raffleId, address indexed winner, uint256 vrfRequestId);
+    event PrizeClaimed(uint256 indexed raffleId, address indexed winner);
+    event RaffleCancelled(uint256 indexed raffleId);
+    event FeeUpdated(uint256 newFeePercentage);
+    event NativeVRFUpdated(address indexed oldAddress, address indexed newAddress);
+    
+    constructor(address _nativeVRF) Ownable() {
+        nativeVRF = INativeVRF(_nativeVRF);
+    }
+    
+    /**
+     * @dev Create a new raffle
+     */
+    function createRaffle(
+        uint8 _prizeType,
+        address _prizeContract,
+        uint128 _prizeAmount,
+        uint64 _prizeTokenId,
+        address _paymentToken,
+        uint128 _ticketPrice,
+        uint32 _maxTicketsPerUser,
+        uint32 _totalMaxTickets,
+        uint32 _duration
+    ) external nonReentrant returns (uint256) {
+        require(_ticketPrice > 0, "Invalid ticket price");
+        require(_duration > 0, "Invalid duration");
+        require(_maxTicketsPerUser > 0, "Invalid max tickets per user");
+        
+        uint256 raffleId = ++raffleCounter;
+        
+        Raffle storage raffle = raffles[raffleId];
+        raffle.creator = msg.sender;
+        raffle.prizeContract = _prizeContract;
+        raffle.paymentToken = _paymentToken;
+        raffle.prizeAmount = _prizeAmount;
+        raffle.prizeTokenId = _prizeTokenId;
+        raffle.ticketPrice = _ticketPrice;
+        raffle.maxTicketsPerUser = _maxTicketsPerUser;
+        raffle.totalMaxTickets = _totalMaxTickets;
+        raffle.endTime = uint32(block.timestamp + _duration);
+        raffle.prizeType = _prizeType;
+        raffle.status = uint8(RaffleStatus.ACTIVE);
+        
+        // Transfer prize to contract
+        _transferPrizeToContract(_prizeType, _prizeContract, _prizeAmount, _prizeTokenId);
+        
+        emit RaffleCreated(raffleId, msg.sender, _prizeContract, _prizeAmount);
+        return raffleId;
+    }
+    
+    /**
+     * @dev Buy tickets for a raffle
+     */
+    function buyTickets(uint256 _raffleId, uint32 _quantity) external payable nonReentrant {
+        Raffle storage raffle = raffles[_raffleId];
+        require(raffle.creator != address(0), "Raffle does not exist");
+        require(raffle.status == uint8(RaffleStatus.ACTIVE), "Raffle not active");
+        require(block.timestamp < raffle.endTime, "Raffle ended");
+        require(_quantity > 0, "Invalid quantity");
+        
+        uint32 userCurrentTickets = userTickets[_raffleId][msg.sender];
+        require(userCurrentTickets + _quantity <= raffle.maxTicketsPerUser, "Exceeds max tickets per user");
+        
+        if (raffle.totalMaxTickets > 0) {
+            require(raffle.currentTickets + _quantity <= raffle.totalMaxTickets, "Exceeds total max tickets");
+        }
+        
+        uint256 totalCost = uint256(raffle.ticketPrice) * _quantity;
+        
+        // Handle payment
+        if (raffle.paymentToken == address(0)) {
+            require(msg.value == totalCost, "Incorrect ETH amount");
+        } else {
+            require(msg.value == 0, "ETH not accepted");
+            IERC20(raffle.paymentToken).transferFrom(msg.sender, address(this), totalCost);
+        }
+        
+        // Update state
+        if (userCurrentTickets == 0) {
+            raffleParticipants[_raffleId].push(msg.sender);
+        }
+        userTickets[_raffleId][msg.sender] = userCurrentTickets + _quantity;
+        raffle.currentTickets += _quantity;
+        
+        emit TicketPurchased(_raffleId, msg.sender, _quantity);
+    }
+    
+    /**
+     * @dev Draw the raffle winner using VRF
+     */
+    function drawRaffle(uint256 _raffleId) external payable nonReentrant {
+        Raffle storage raffle = raffles[_raffleId];
+        require(raffle.creator != address(0), "Raffle does not exist");
+        require(raffle.status == uint8(RaffleStatus.ACTIVE), "Raffle not active");
+        require(raffle.currentTickets > 0, "No tickets sold");
+        
+        bool canDraw = block.timestamp >= raffle.endTime || 
+                      (raffle.totalMaxTickets > 0 && raffle.currentTickets >= raffle.totalMaxTickets);
+        require(canDraw, "Cannot draw yet");
+        
+        // Request random number from VRF
+        require(nativeVRF.isWhitelisted(address(this)), "Contract not whitelisted");
+        uint256[] memory requestIds = nativeVRF.requestRandom{value: msg.value}(1);
+        raffleVRFRequests[_raffleId] = requestIds[0];
+        
+        raffle.status = uint8(RaffleStatus.DRAWN);
+        
+        emit RaffleDrawn(_raffleId, address(0), requestIds[0]);
+    }
+    
+    /**
+     * @dev Finalize raffle after VRF fulfillment
+     */
+    function finalizeRaffle(uint256 _raffleId) external nonReentrant {
+        Raffle storage raffle = raffles[_raffleId];
+        require(raffle.status == uint8(RaffleStatus.DRAWN), "Raffle not drawn");
+        require(raffle.winner == address(0), "Already finalized");
+        
+        uint256 vrfRequestId = raffleVRFRequests[_raffleId];
+        uint256 randomNumber = nativeVRF.randomResults(vrfRequestId);
+        require(randomNumber != 0, "VRF not fulfilled");
+        
+        // Calculate winner
+        address winner = _selectWinner(_raffleId, randomNumber);
+        raffle.winner = winner;
+        
+        // Transfer prize to winner
+        _transferPrizeToWinner(_raffleId, winner);
+        
+        // Transfer fees and remaining funds
+        _distributeFunds(_raffleId);
+        
+        emit PrizeClaimed(_raffleId, winner);
+    }
+    
+    /**
+     * @dev Cancel raffle (only creator, before end time, no tickets sold)
+     */
+    function cancelRaffle(uint256 _raffleId) external nonReentrant {
+        Raffle storage raffle = raffles[_raffleId];
+        require(msg.sender == raffle.creator, "Only creator can cancel");
+        require(raffle.status == uint8(RaffleStatus.ACTIVE), "Raffle not active");
+        require(raffle.currentTickets == 0, "Tickets already sold");
+        
+        raffle.status = uint8(RaffleStatus.CANCELLED);
+        
+        // Return prize to creator
+        _transferPrizeToWinner(_raffleId, raffle.creator);
+        
+        emit RaffleCancelled(_raffleId);
+    }
+    
+    // View functions for frontend
+    
+    /**
+     * @dev Get raffle details
+     */
+    function getRaffle(uint256 _raffleId) external view returns (Raffle memory) {
+        return raffles[_raffleId];
+    }
+    
+    /**
+     * @dev Get raffles with pagination
+     */
+    function getRaffles(uint256 _offset, uint256 _limit) external view returns (Raffle[] memory, uint256) {
+        uint256 total = raffleCounter;
+        if (_offset >= total) return (new Raffle[](0), total);
+        
+        uint256 end = _offset + _limit;
+        if (end > total) end = total;
+        
+        Raffle[] memory result = new Raffle[](end - _offset);
+        for (uint256 i = _offset; i < end; i++) {
+            result[i - _offset] = raffles[i + 1]; // raffleId starts from 1
+        }
+        
+        return (result, total);
+    }
+    
+    /**
+     * @dev Get user's ticket count for a raffle
+     */
+    function getUserTickets(uint256 _raffleId, address _user) external view returns (uint32) {
+        return userTickets[_raffleId][_user];
+    }
+    
+    /**
+     * @dev Get raffle participants
+     */
+    function getRaffleParticipants(uint256 _raffleId) external view returns (address[] memory) {
+        return raffleParticipants[_raffleId];
+    }
+    
+    // Admin functions
+    
+    /**
+     * @dev Update fee percentage (only owner)
+     */
+    function updateFeePercentage(uint256 _newFeePercentage) external onlyOwner {
+        require(_newFeePercentage <= 20, "Fee too high"); // Max 20%
+        feePercentage = _newFeePercentage;
+        emit FeeUpdated(_newFeePercentage);
+    }
+    
+    /**
+     * @dev Update nativeVRF address (only owner)
+     */
+    function updateNativeVRF(address _newNativeVRF) external onlyOwner {
+        require(_newNativeVRF != address(0), "Invalid address");
+        require(_newNativeVRF != address(nativeVRF), "Same address");
+        
+        address oldAddress = address(nativeVRF);
+        nativeVRF = INativeVRF(_newNativeVRF);
+        
+        emit NativeVRFUpdated(oldAddress, _newNativeVRF);
+    }
+    
+    /**
+     * @dev Withdraw accumulated fees (only owner)
+     */
+    function withdrawFees(address _token) external onlyOwner {
+        if (_token == address(0)) {
+            payable(owner()).transfer(address(this).balance);
+        } else {
+            IERC20 token = IERC20(_token);
+            token.transfer(owner(), token.balanceOf(address(this)));
+        }
+    }
+    
+    // Internal functions
+    
+    function _transferPrizeToContract(uint8 _prizeType, address _prizeContract, uint128 _prizeAmount, uint64 _prizeTokenId) internal {
+        if (_prizeType == uint8(PrizeType.ERC20)) {
+            IERC20(_prizeContract).transferFrom(msg.sender, address(this), _prizeAmount);
+        } else if (_prizeType == uint8(PrizeType.ERC721)) {
+            IERC721(_prizeContract).transferFrom(msg.sender, address(this), _prizeTokenId);
+        } else if (_prizeType == uint8(PrizeType.ERC1155)) {
+            IERC1155(_prizeContract).safeTransferFrom(msg.sender, address(this), _prizeTokenId, _prizeAmount, "");
+        }
+    }
+    
+    function _transferPrizeToWinner(uint256 _raffleId, address _winner) internal {
+        Raffle storage raffle = raffles[_raffleId];
+        
+        if (raffle.prizeType == uint8(PrizeType.ERC20)) {
+            IERC20(raffle.prizeContract).transfer(_winner, raffle.prizeAmount);
+        } else if (raffle.prizeType == uint8(PrizeType.ERC721)) {
+            IERC721(raffle.prizeContract).transferFrom(address(this), _winner, raffle.prizeTokenId);
+        } else if (raffle.prizeType == uint8(PrizeType.ERC1155)) {
+            IERC1155(raffle.prizeContract).safeTransferFrom(address(this), _winner, raffle.prizeTokenId, raffle.prizeAmount, "");
+        }
+    }
+    
+    function _selectWinner(uint256 _raffleId, uint256 _randomNumber) internal view returns (address) {
+        Raffle storage raffle = raffles[_raffleId];
+        uint256 winningTicket = (_randomNumber % raffle.currentTickets) + 1;
+        
+        address[] memory participants = raffleParticipants[_raffleId];
+        uint256 ticketCount = 0;
+        
+        for (uint256 i = 0; i < participants.length; i++) {
+            ticketCount += userTickets[_raffleId][participants[i]];
+            if (ticketCount >= winningTicket) {
+                return participants[i];
+            }
+        }
+        
+        return participants[0]; // Fallback
+    }
+    
+    function _distributeFunds(uint256 _raffleId) internal {
+        Raffle storage raffle = raffles[_raffleId];
+        uint256 totalRevenue = uint256(raffle.ticketPrice) * raffle.currentTickets;
+        uint256 fee = (totalRevenue * feePercentage) / 100;
+        uint256 creatorAmount = totalRevenue - fee;
+        
+        if (raffle.paymentToken == address(0)) {
+            payable(raffle.creator).transfer(creatorAmount);
+            // Fee stays in contract for owner withdrawal
+        } else {
+            IERC20 token = IERC20(raffle.paymentToken);
+            token.transfer(raffle.creator, creatorAmount);
+            // Fee stays in contract for owner withdrawal
+        }
+    }
+    
+    // Required for ERC1155 compatibility
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+    
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external pure returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+}

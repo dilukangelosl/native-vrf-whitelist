@@ -222,8 +222,7 @@ contract PrizeDrawConsumer {
     {
         // Request randomness from Native VRF
         // Note: This requires the contract to be whitelisted in Native VRF
-        uint256[] memory vrfRequestIds = nativeVRF.requestRandom{value: msg.value}(1);
-        uint256 vrfRequestId = vrfRequestIds[0];
+        nativeVRF.requestRandom{value: msg.value}(1);
         
         // Create our internal request tracking
         requestId = nextRequestId++;
