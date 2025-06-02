@@ -4,7 +4,7 @@ import addressUtils from "../../utils/addressUtils";
 async function main() {
   const contract = await ethers.getContractFactory("RaffleOnape");
   const deployedContract = await contract.deploy(
-    "0x78f7fAF4F40A93c12314A44d35F901306Dd5673B"
+    "0x47B393684E5D72b004b8aDB0645F5377374a4f6a"
   );
 
   console.log({ contract: deployedContract.address });

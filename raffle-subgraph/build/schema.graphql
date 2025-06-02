@@ -1,0 +1,122 @@
+# Raffle entity representing each raffle created
+type Raffle @entity {
+  id: Bytes! # raffleId as bytes
+  raffleId: BigInt! # the actual raffle ID as number
+  creator: User! # User entity reference
+  prizeContract: Bytes! # address
+  paymentToken: Bytes! # address (0x0 for ETH)
+  winner: User # User entity reference - nullable until drawn
+  prizeAmount: BigInt!
+  ticketPrice: BigInt!
+  prizeTokenId: BigInt!
+  maxTicketsPerUser: BigInt!
+  totalMaxTickets: BigInt!
+  currentTickets: BigInt!
+  endTime: BigInt!
+  minTicketsNeededToDraw: BigInt!
+  prizeType: Int! # 0=ERC20, 1=ERC721, 2=ERC1155
+  status: Int! # 0=ACTIVE, 1=DRAWN, 2=CANCELLED, 3=REFUND_AVAILABLE
+  vrfRequestId: BigInt # VRF request ID
+  createdAt: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Relations
+  tickets: [Ticket!]! @derivedFrom(field: "raffle")
+  refunds: [Refund!]! @derivedFrom(field: "raffle")
+}
+
+# Ticket purchase entity
+type Ticket @entity {
+  id: Bytes! # transaction hash + log index
+  raffle: Raffle!
+  buyer: User! # User entity reference
+  quantity: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Refund claim entity
+type Refund @entity {
+  id: Bytes! # transaction hash + log index
+  raffle: Raffle!
+  user: User! # User entity reference
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# User entity to track user activity
+type User @entity {
+  id: Bytes! # address
+  totalRafflesCreated: BigInt!
+  totalTicketsPurchased: BigInt!
+  totalRefundsClaimed: BigInt!
+  totalPrizesWon: BigInt!
+  createdAt: BigInt!
+  
+  # Relations
+  rafflesCreated: [Raffle!]! @derivedFrom(field: "creator")
+  tickets: [Ticket!]! @derivedFrom(field: "buyer")
+  refunds: [Refund!]! @derivedFrom(field: "user")
+  rafflesWon: [Raffle!]! @derivedFrom(field: "winner")
+}
+
+# Global statistics
+type GlobalStats @entity {
+  id: Bytes! # singleton - always "global"
+  totalRaffles: BigInt!
+  totalTicketsSold: BigInt!
+  totalValueLocked: BigInt! # in wei
+  totalRefunds: BigInt!
+  totalPrizesClaimed: BigInt!
+}
+
+# Event entities for historical tracking
+type RaffleCreatedEvent @entity {
+  id: Bytes! # transaction hash + log index
+  raffleId: BigInt!
+  creator: Bytes!
+  prizeContract: Bytes!
+  prizeAmount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type RaffleDrawnEvent @entity {
+  id: Bytes! # transaction hash + log index
+  raffleId: BigInt!
+  winner: Bytes!
+  vrfRequestId: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type PrizeClaimedEvent @entity {
+  id: Bytes! # transaction hash + log index
+  raffleId: BigInt!
+  winner: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type RaffleCancelledEvent @entity {
+  id: Bytes! # transaction hash + log index
+  raffleId: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type RefundAvailableEvent @entity {
+  id: Bytes! # transaction hash + log index
+  raffleId: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}

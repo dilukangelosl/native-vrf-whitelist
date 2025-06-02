@@ -19,6 +19,9 @@ describe("NativeVRF", function () {
     const NativeVRF = await ethers.getContractFactory("NativeVRF");
     nativeVRF = await NativeVRF.deploy(SEED);
     await nativeVRF.deployed();
+
+    // The difficulty starts at 1500 which might be too high for testing
+    // We'll increase the attempt limit in our test function
   });
 
   describe("Deployment", function () {

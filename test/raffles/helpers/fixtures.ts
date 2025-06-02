@@ -42,7 +42,7 @@ export async function deployTestFixtures(): Promise<TestFixtures> {
 
   // Deploy mock VRF
   const MockNativeVRF = await ethers.getContractFactory("MockNativeVRF");
-  const mockVRF = await MockNativeVRF.deploy();
+  const mockVRF = await MockNativeVRF.deploy(123456); // Provide seed parameter
   await mockVRF.deployed();
 
   // Deploy raffle contract

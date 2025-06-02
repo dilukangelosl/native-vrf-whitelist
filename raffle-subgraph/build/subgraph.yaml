@@ -2,7 +2,7 @@ specVersion: 1.0.0
 indexerHints:
   prune: auto
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: RaffleOnApe
@@ -10,7 +10,7 @@ dataSources:
     source:
       address: "0xa4B56076d4D0b6b892b332e6d1c6d5F0181984f9"
       abi: RaffleOnApe
-      startBlock: 16969185 # You may want to update this to the actual deployment block
+      startBlock: 16969185
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -28,7 +28,7 @@ dataSources:
         - RefundAvailableEvent
       abis:
         - name: RaffleOnApe
-          file: ./abis/RaffleOnApe.json
+          file: RaffleOnApe/RaffleOnApe.json
       eventHandlers:
         - event: RaffleCreated(indexed uint256,indexed address,address,uint256)
           handler: handleRaffleCreated
@@ -48,4 +48,4 @@ dataSources:
           handler: handleFeeUpdated
         - event: NativeVRFUpdated(indexed address,indexed address)
           handler: handleNativeVRFUpdated
-      file: ./src/raffle-on-ape.ts
+      file: RaffleOnApe/RaffleOnApe.wasm

@@ -21,7 +21,7 @@ contract NativeVRF {
     mapping(address => bool) public whitelist;
 
     // Difficulty variables
-    uint256 public constant MIN_DIFFICULTY = 1000;
+    uint256 public constant MIN_DIFFICULTY = 500;
     uint256 public expectedFulfillTime = 15; // seconds
     uint256 public estimatedHashPower = 100; // hash per second
     uint256 public difficulty = expectedFulfillTime * estimatedHashPower; // estimated attemps to generate a random feed input
@@ -349,8 +349,7 @@ contract NativeVRF {
                     _randInput,
                     _requestId,
                     msg.sender,
-                    addressNonces[msg.sender],
-                    block.number
+                    addressNonces[msg.sender]
                 )
             );
     }
