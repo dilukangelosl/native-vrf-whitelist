@@ -1,0 +1,51 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: RaffleOnApe
+    network: apechain
+    source:
+      address: "0x0bce8f4Ff4d595d334c447c934A51eefECB55Bac"
+      abi: RaffleOnApe
+      startBlock: 16491058
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Raffle
+        - Ticket
+        - Refund
+        - User
+        - GlobalStats
+        - RaffleCreatedEvent
+        - RaffleDrawnEvent
+        - PrizeClaimedEvent
+        - RaffleCancelledEvent
+        - RefundAvailableEvent
+      abis:
+        - name: RaffleOnApe
+          file: RaffleOnApe/RaffleOnApe.json
+      eventHandlers:
+        - event: RaffleCreated(indexed uint256,indexed address,address,uint256)
+          handler: handleRaffleCreated
+        - event: TicketPurchased(indexed uint256,indexed address,uint32)
+          handler: handleTicketPurchased
+        - event: RaffleDrawn(indexed uint256,indexed address,uint256)
+          handler: handleRaffleDrawn
+        - event: PrizeClaimed(indexed uint256,indexed address)
+          handler: handlePrizeClaimed
+        - event: RaffleCancelled(indexed uint256)
+          handler: handleRaffleCancelled
+        - event: RefundAvailable(indexed uint256)
+          handler: handleRefundAvailable
+        - event: RefundClaimed(indexed uint256,indexed address,uint256)
+          handler: handleRefundClaimed
+        - event: FeeUpdated(uint256)
+          handler: handleFeeUpdated
+        - event: NativeVRFUpdated(indexed address,indexed address)
+          handler: handleNativeVRFUpdated
+      file: RaffleOnApe/RaffleOnApe.wasm
