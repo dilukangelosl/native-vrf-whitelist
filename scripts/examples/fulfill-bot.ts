@@ -5,105 +5,176 @@ import addressUtils from "../../utils/addressUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const delay = (delayMs: number) => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(null);
-        }, delayMs);
-    })
-}
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(null);
+    }, delayMs);
+  });
+};
 
 const runInterval = async (handler: Function, delayMs: number) => {
-    await handler();
-    await delay(delayMs);
-    await runInterval(handler, delayMs);
-}
+  await handler();
+  await delay(delayMs);
+  await runInterval(handler, delayMs);
+};
 
-const messageHashFromNumbers = (values: BigNumberish[]) => {
-    const types = values.map(() => "uint256");
-    return ethers.utils.solidityKeccak256(types, values);
-}
+// Use the contract's own getMessageHash function to ensure exact match
+const getMessageHashFromContract = async (
+  nativeVRF: NativeVRF,
+  requestId: BigNumberish,
+  randInput: BigNumberish
+) => {
+  return await nativeVRF.getMessageHash(requestId, randInput);
+};
 
 const convertSignatureLocal = (signature: utils.BytesLike) => {
-    const truncatedNumber = ethers.BigNumber.from(signature).toHexString().slice(0, 66);
-    return ethers.BigNumber.from(truncatedNumber);
-}
+  const truncatedNumber = ethers.BigNumber.from(signature)
+    .toHexString()
+    .slice(0, 66);
+  return ethers.BigNumber.from(truncatedNumber);
+};
 
-const calculateRandomInput = async (signer: SignerWithAddress, nativeVRF: NativeVRF, requestId: string) => {
-    let input = 0;
-    let found = 0;
+const calculateRandomInput = async (
+  signer: SignerWithAddress,
+  nativeVRF: NativeVRF,
+  requestId: string
+) => {
+  let input = 0;
+  let found = 0;
 
-    const prevRandom = await nativeVRF.randomResults(Number(requestId) - 1);
-    const difficulty = await nativeVRF.difficulty();
+  const prevRandom = await nativeVRF.randomResults(Number(requestId) - 1);
+  const difficulty = await nativeVRF.difficulty();
+  const currentNonce = await nativeVRF.addressNonces(signer.address);
 
-    do {
-        const message = messageHashFromNumbers([prevRandom, input]);
-        const signature = await signer.signMessage(ethers.utils.arrayify(message));
-        const value = convertSignatureLocal(signature);
+  console.log(`Calculating for request ${requestId}:`);
+  console.log(`- Previous random: ${prevRandom.toString()}`);
+  console.log(`- Current nonce: ${currentNonce.toString()}`);
+  console.log(`- Difficulty: ${difficulty.toString()}`);
 
-        if (value.mod(difficulty).eq(0)) {
-            found = input;
-        }
+  do {
+    // Use the contract's own getMessageHash function to ensure exact match
+    const messageHash = await getMessageHashFromContract(
+      nativeVRF,
+      requestId,
+      input
+    );
 
-        input++;
-    } while (found === 0);
+    const signature = await signer.signMessage(
+      ethers.utils.arrayify(messageHash)
+    );
+    const value = convertSignatureLocal(signature);
 
-    const message = messageHashFromNumbers([prevRandom, found]);
-    const signature = await signer.signMessage(ethers.utils.arrayify(message));
+    if (value.mod(difficulty).eq(0)) {
+      found = input;
+      console.log(`Found valid input: ${found} after ${input + 1} attempts`);
+    }
+    input++;
 
-    return { input: found, signature };
-}
+    // Add some logging every 1000 attempts
+    if (input % 1000 === 0) {
+      console.log(`Attempted ${input} inputs so far...`);
+    }
+  } while (found === 0);
+
+  // Generate final signature with the found input
+  const messageHash = await getMessageHashFromContract(
+    nativeVRF,
+    requestId,
+    found
+  );
+  const signature = await signer.signMessage(
+    ethers.utils.arrayify(messageHash)
+  );
+
+  return { input: found, signature };
+};
 
 const decordOutputs = (receipt: ContractReceipt) => {
-    const events = receipt.events;
-    if (!events) return [];
-    return events.filter(e => e.event).map(e => [e.event, e.args]);
-}
+  const events = receipt.events;
+  if (!events) return [];
+  return events.filter((e) => e.event).map((e) => [e.event, e.args]);
+};
 
 async function main() {
-    const addressList = await addressUtils.getAddressList(hre.network.name);
+  const addressList = await addressUtils.getAddressList(hre.network.name);
+  const [signer] = await ethers.getSigners();
+  const nativeVRF = await NativeVRF__factory.connect(
+    addressList["NativeVRF"],
+    signer
+  );
 
-    const [signer] = await ethers.getSigners();
-    const nativeVRF = await NativeVRF__factory.connect(addressList['NativeVRF'], signer);
+  // Check if the signer is whitelisted (if needed for requesting)
+  try {
+    const isWhitelisted = await nativeVRF.isWhitelisted(signer.address);
+    console.log(`Signer ${signer.address} whitelist status: ${isWhitelisted}`);
+  } catch (e) {
+    console.log("Could not check whitelist status");
+  }
 
-    const delayMs = 1000;
+  const delayMs = 1000;
 
-    runInterval(async () => {
-        try {
-            const curRequestId = await nativeVRF.currentRequestId();
-            const latestFulfill = await nativeVRF.latestFulfillId();
-            const requestId = latestFulfill.add(1);
+  runInterval(async () => {
+    try {
+      const curRequestId = await nativeVRF.currentRequestId();
+      const latestFulfill = await nativeVRF.latestFulfillId();
+      const requestId = latestFulfill.add(1);
 
-            if (curRequestId.eq(requestId)) {
-                console.log("There is no new random request. Wait for the incoming requests...");
-                return;
-            }
+      if (curRequestId.eq(requestId)) {
+        console.log(
+          "There is no new random request. Wait for the incoming requests..."
+        );
+        return;
+      }
 
-            console.log("Found new random request");
-            console.log('Current ID: ', curRequestId.toString(), 'Last fulfill ID', latestFulfill.toString(), 'Submitted Fultill ID: ', requestId.toString());
+      console.log("Found new random request");
+      console.log(
+        "Current ID: ",
+        curRequestId.toString(),
+        "Last fulfill ID",
+        latestFulfill.toString(),
+        "Submitted Fulfill ID: ",
+        requestId.toString()
+      );
 
-            const { input, signature } = await calculateRandomInput(
-                signer,
-                nativeVRF,
-                requestId.toString(),
-            );
+      const { input, signature } = await calculateRandomInput(
+        signer,
+        nativeVRF,
+        requestId.toString()
+      );
 
-            const tx = await nativeVRF.fullfillRandomness([requestId], [input], [signature]);
+      console.log("Submitting fulfill transaction...");
+      const tx = await nativeVRF.fullfillRandomness(
+        [requestId],
+        [input],
+        [signature]
+      );
 
-            console.log("Submit fulfill transaction");
+      console.log("Submit fulfill transaction hash:", tx.hash);
+      const receipt = await tx.wait();
+      console.log("Fulfill randomness successfully");
+      console.log("Data: ", decordOutputs(receipt));
+    } catch (e) {
+      console.error("Error fulfill randomness:", e);
 
-            const receipt = await tx.wait();
-
-            console.log("Fulfll randomness successfully");
-            console.log("Data: ", decordOutputs(receipt));
-        } catch (e) {
-            console.error("Error fulfill randomness", e);
-        }
-    }, delayMs);
+      // Add more specific error handling
+      if (e.message && e.message.includes("Invalid signature")) {
+        console.error(
+          "Signature validation failed - check message hash calculation"
+        );
+      } else if (e.message && e.message.includes("Invalid random input")) {
+        console.error(
+          "Random input validation failed - check difficulty calculation"
+        );
+      } else if (e.message && e.message.includes("Already fullfilled")) {
+        console.error("Request already fulfilled by another fulfiller");
+      }
+    }
+  }, delayMs);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
+  console.error(error);
+  process.exitCode = 1;
 });

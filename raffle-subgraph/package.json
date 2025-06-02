@@ -5,9 +5,9 @@
     "codegen": "graph codegen",
     "build": "graph build",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ raffleonape",
-    "create-local": "graph create --node http://localhost:8020/ raffleonape",
-    "remove-local": "graph remove --node http://localhost:8020/ raffleonape",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 raffleonape",
+    "create-local": "graph create --node http://35.209.212.101:8020/ raffleonape",
+    "remove-local": "graph remove --node http://35.209.212.101:8020/ raffleonape",
+    "deploy-server": "graph deploy --node http://35.209.212.101:8020/  raffleonape",
     "test": "graph test"
   },
   "dependencies": {
