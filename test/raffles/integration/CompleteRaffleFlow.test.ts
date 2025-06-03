@@ -257,7 +257,7 @@ describe("CompleteRaffleFlow", function () {
           ethers.utils.parseEther("0.1"),
           5,
           10, // Only 10 total tickets
-          0,
+          1,
           3600
         );
 

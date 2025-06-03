@@ -356,7 +356,7 @@ describe("ReentrancyAttacks", function () {
           highPrice,
           10,
           100,
-          0,
+          1,
           3600
         );
 
