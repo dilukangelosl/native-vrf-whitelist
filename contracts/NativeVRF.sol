@@ -13,7 +13,7 @@ import "./libraries/Signature.sol";
  * It allows DAO control, which provides high level of decentralization.
  *
  * @author Diluk Angelo (@cryptoangelodev)
- * @notice Enhanced fork of https://github.com/Native-VRF/native-vrf
+ * @notice Enhanced fork of https://github.com/dilukangelosl/native-vrf-whitelist
  */
 contract NativeVRF {
     // Access control variables
