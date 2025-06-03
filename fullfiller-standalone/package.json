@@ -1,0 +1,19 @@
+{
+  "name": "fullfiller-standalone",
+  "version": "1.0.0",
+  "description": "Standalone VRF Fulfiller Service",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["vrf", "fulfiller", "blockchain"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "dotenv": "^16.3.1"
+  }
+}
