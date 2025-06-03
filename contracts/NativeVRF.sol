@@ -107,7 +107,7 @@ contract NativeVRF {
      * - The caller must be whitelisted
      * - The reward per request must be grater than the `minReward` value
      */
-    function requestRandom(uint256 numRequest) external payable onlyWhitelisted returns (uint256[] memory) {
+    function requestRandom(uint256 numRequest) external payable virtual onlyWhitelisted returns (uint256[] memory) {
         require(numRequest >= 1, "At least one request");
 
         uint256[] memory requestIds = new uint256[](numRequest);

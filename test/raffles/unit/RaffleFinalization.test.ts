@@ -363,7 +363,7 @@ describe("RaffleFinalization", function () {
           raffleContract,
           newRaffleId,
           [accounts.buyer1],
-          [1],
+          [5],
           true
         );
 

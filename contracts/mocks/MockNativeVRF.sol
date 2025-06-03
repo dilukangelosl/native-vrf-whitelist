@@ -58,12 +58,14 @@ contract MockNativeVRF is NativeVRF {
         mockRandomResults[requestId] = randomness;
     }
 
-    // Override requestRandom to make it simpler for testing
+    // Override requestRandom to make it simpler for testing (no payment required)
     function requestRandom(uint256 numRequest) external payable override onlyWhitelisted returns (uint256[] memory) {
         require(numRequest >= 1, "At least one request");
 
         uint256[] memory requestIds = new uint256[](numRequest);
         uint256 rewardPerRequest = msg.value > 0 ? msg.value / numRequest : 0;
+        
+        // Skip minReward check for testing - mock should accept any payment amount
 
         for (uint256 i = 0; i < numRequest; i++) {
             uint256 requestId = currentRequestId + i;

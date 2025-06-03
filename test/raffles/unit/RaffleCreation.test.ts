@@ -229,7 +229,7 @@ describe("RaffleCreation", function () {
               params.ticketPrice,
               params.maxTicketsPerUser,
               params.totalMaxTickets,
-              0,
+              1,
               params.duration
             )
         )

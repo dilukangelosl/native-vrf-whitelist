@@ -21,7 +21,7 @@ interface INativeVRF {
 /**
  * @title RaffleOnApe
  * @dev Ultra gas-efficient raffle contract with NativeVRF integration
- * @author Diluk Angelo (@cryptoangelodev)
+ * @author Diluk Angelo (@cryptoangelodev) - Product of @OtherEggGenesis
  * @notice Gas Opimized Raffle Contract using NativeVRF for random number generation
  * @dev Supports ERC20, ERC721, and ERC1155 prizes
  */
@@ -64,7 +64,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
     INativeVRF public nativeVRF;
     uint256 public raffleCounter;
     uint256 public feePercentage = 7; // 7% default fee
-
+    bool public canCreate = true;
     // Mappings
     mapping(uint256 => Raffle) public raffles;
     mapping(uint256 => uint256) public raffleVRFRequests; // raffleId => VRF requestId
@@ -107,6 +107,8 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         nativeVRF = INativeVRF(_nativeVRF);
     }
 
+
+
     /**
      * @dev Create a new raffle
      */
@@ -122,6 +124,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         uint32 _minTicketsNeededToDraw,
         uint32 _duration
     ) external nonReentrant returns (uint256) {
+        require(canCreate, "Raffle creation disabled");
         require(_ticketPrice > 0, "Invalid ticket price");
         require(_duration > 0, "Invalid duration");
         require(_maxTicketsPerUser > 0, "Invalid max tickets per user");
@@ -153,6 +156,16 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
 
         emit RaffleCreated(raffleId, msg.sender, _prizeContract, _prizeAmount);
         return raffleId;
+    }
+
+
+    /**
+     * @dev Set raffle creation status
+     */
+    function setRaffleCreationStatus(
+        bool _canCreate
+    ) external onlyOwner {
+        canCreate = _canCreate;
     }
 
     /**

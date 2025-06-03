@@ -159,7 +159,7 @@ describe("CompleteRaffleFlow", function () {
         raffleContract,
         raffleId,
         [accounts.buyer1, accounts.buyer2, accounts.buyer3],
-        [1, 2, 1],
+        [2, 2, 2],
         true
       );
 
@@ -452,7 +452,7 @@ describe("CompleteRaffleFlow", function () {
           raffleContract,
           erc721RaffleId,
           [accounts.buyer1, accounts.buyer3],
-          [1, 2],
+          [2, 3],
           true
         );
 
@@ -587,7 +587,7 @@ describe("CompleteRaffleFlow", function () {
         raffleContract,
         raffleId,
         [accounts.buyer1],
-        [1],
+        [5],
         true
       );
 
@@ -628,6 +628,7 @@ describe("CompleteRaffleFlow", function () {
         accounts.buyer2,
         accounts.buyer3,
         accounts.creator2,
+        accounts.owner,
       ];
       for (let i = 0; i < manyBuyers.length; i++) {
         const totalCost = params.ticketPrice.mul(1);
