@@ -33,8 +33,8 @@ export const TEST_DATA = {
   },
 
   VRF_COST: ethers.utils.parseEther("0.001"),
-  DEFAULT_FEE: 7,
-  MAX_FEE: 20,
+  DEFAULT_FEE: 690, // 6.9% in basis points (690/10000)
+  MAX_FEE: 2000, // 20% in basis points (2000/10000)
 };
 
 // Time manipulation helpers
@@ -119,20 +119,19 @@ export async function createSampleRaffle(
       ? (params as any).prizeTokenId
       : 0;
 
-  const tx = await raffleContract
-    .connect(creator)
-    .createRaffle(
-      params.prizeType,
-      prizeContract.address,
-      prizeAmount,
-      prizeTokenId,
-      paymentToken,
-      params.ticketPrice,
-      params.maxTicketsPerUser,
-      params.totalMaxTickets,
-      5, // minTicketsNeededToDraw - default to 5
-      params.duration
-    );
+  const tx = await raffleContract.connect(creator).createRaffle(
+    params.prizeType,
+    prizeContract.address,
+    prizeAmount,
+    prizeTokenId,
+    paymentToken,
+    params.ticketPrice,
+    params.maxTicketsPerUser,
+    params.totalMaxTickets,
+    5, // minTicketsNeededToDraw - default to 5
+    params.duration,
+    "0x0000000000000000000000000000000000000000" // whitelistNftContract - default to zero address
+  );
 
   const receipt = await tx.wait();
   const event = receipt.events?.find((e: any) => e.event === "RaffleCreated");

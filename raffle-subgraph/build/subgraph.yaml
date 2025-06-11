@@ -8,9 +8,9 @@ dataSources:
     name: RaffleOnApe
     network: apechain
     source:
-      address: "0xa4B56076d4D0b6b892b332e6d1c6d5F0181984f9"
+      address: "0xd991b048c0618BbeE00d5B0F3c4CE8Ecb661D8c1"
       abi: RaffleOnApe
-      startBlock: 16969185
+      startBlock: 17338536
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -26,11 +26,20 @@ dataSources:
         - PrizeClaimedEvent
         - RaffleCancelledEvent
         - RefundAvailableEvent
+        - FeeUpdatedEvent
+        - NFTContractWhitelistedEvent
+        - VolumeSnapshot
+        - TopParticipant
+        - TopWinner
+        - TopCreator
+        - DailyVolume
+        - WeeklyVolume
+        - MonthlyVolume
       abis:
         - name: RaffleOnApe
           file: RaffleOnApe/RaffleOnApe.json
       eventHandlers:
-        - event: RaffleCreated(indexed uint256,indexed address,address,uint256)
+        - event: RaffleCreated(indexed uint256,indexed address,address,uint256,address)
           handler: handleRaffleCreated
         - event: TicketPurchased(indexed uint256,indexed address,uint32)
           handler: handleTicketPurchased
@@ -48,4 +57,6 @@ dataSources:
           handler: handleFeeUpdated
         - event: NativeVRFUpdated(indexed address,indexed address)
           handler: handleNativeVRFUpdated
+        - event: NFTContractWhitelisted(indexed address,bool)
+          handler: handleNFTContractWhitelisted
       file: RaffleOnApe/RaffleOnApe.wasm

@@ -92,7 +92,7 @@ describe("CompleteRaffleFlow", function () {
         accounts.creator1.address
       );
       const totalRevenue = params.ticketPrice.mul(expectedTotal);
-      const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(100);
+      const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(10000);
       const expectedCreatorAmount = totalRevenue.sub(fee);
 
       expect(creatorBalanceAfter.sub(creatorBalanceBefore)).to.equal(
@@ -234,7 +234,7 @@ describe("CompleteRaffleFlow", function () {
         accounts.creator1.address
       );
       const totalRevenue = params.ticketPrice.mul(5); // 2+3 tickets
-      const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(100);
+      const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(10000);
       const expectedCreatorAmount = totalRevenue.sub(fee);
 
       expect(creatorBalanceAfter.sub(creatorBalanceBefore)).to.equal(
@@ -258,7 +258,8 @@ describe("CompleteRaffleFlow", function () {
           5,
           10, // Only 10 total tickets
           1,
-          3600
+          3600,
+          ethers.constants.AddressZero // whitelistNftContract
         );
 
       const receipt = await limitedRaffleId.wait();

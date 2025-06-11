@@ -204,7 +204,7 @@ describe("RaffleFinalization", function () {
 
         // Creator should receive payment minus fees
         const totalRevenue = params.ticketPrice.mul(6); // 3+2+1 tickets
-        const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(100);
+        const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(10000);
         const expectedCreatorAmount = totalRevenue.sub(fee);
 
         expect(creatorBalanceAfter.sub(creatorBalanceBefore)).to.equal(
@@ -262,7 +262,7 @@ describe("RaffleFinalization", function () {
 
         // Creator should receive payment minus fees
         const totalRevenue = params.ticketPrice.mul(5); // 3+2 tickets
-        const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(100);
+        const fee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(10000);
         const expectedCreatorAmount = totalRevenue.sub(fee);
 
         expect(creatorBalanceAfter.sub(creatorBalanceBefore)).to.equal(
@@ -287,7 +287,7 @@ describe("RaffleFinalization", function () {
 
         // Contract should retain the fees and pay out creator's share
         const totalRevenue = params.ticketPrice.mul(6); // 3+2+1 tickets
-        const expectedFee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(100);
+        const expectedFee = totalRevenue.mul(TEST_DATA.DEFAULT_FEE).div(10000);
         const creatorShare = totalRevenue.sub(expectedFee);
 
         // The change in contract balance should be negative (paying out creator share)

@@ -58,12 +58,13 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         uint32 minTicketsNeededToDraw; // 4 bytes
         uint8 prizeType; // 1 byte (PrizeType enum)
         uint8 status; // 1 byte (RaffleStatus enum)
+        address whitelistNftContract; // 20 bytes (address(0) for open raffle)
     }
 
     // Storage variables
     INativeVRF public nativeVRF;
     uint256 public raffleCounter;
-    uint256 public feePercentage = 7; // 7% default fee
+    uint256 public feePercentage = 690; // 6.9% default fee (basis points: 690/10000 = 6.9%)
     bool public canCreate = true;
     // Mappings
     mapping(uint256 => Raffle) public raffles;
@@ -71,13 +72,15 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
     mapping(uint256 => mapping(address => uint32)) public userTickets; // raffleId => user => ticket count
     mapping(uint256 => address[]) public raffleParticipants; // raffleId => participants array
     mapping(uint256 => mapping(address => bool)) public hasRefunded; // raffleId => user => refunded status
+    mapping(address => bool) public whitelistedNFTContracts; // whitelisted NFT contracts
 
     // Events
     event RaffleCreated(
         uint256 indexed raffleId,
         address indexed creator,
         address prizeContract,
-        uint256 prizeAmount
+        uint256 prizeAmount,
+        address whitelistNftContract
     );
     event TicketPurchased(
         uint256 indexed raffleId,
@@ -102,6 +105,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         address indexed oldAddress,
         address indexed newAddress
     );
+    event NFTContractWhitelisted(address indexed nftContract, bool status);
 
     constructor(address _nativeVRF) Ownable() {
         nativeVRF = INativeVRF(_nativeVRF);
@@ -122,13 +126,19 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         uint32 _maxTicketsPerUser,
         uint32 _totalMaxTickets,
         uint32 _minTicketsNeededToDraw,
-        uint32 _duration
+        uint32 _duration,
+        address _whitelistNftContract
     ) external nonReentrant returns (uint256) {
         require(canCreate, "Raffle creation disabled");
         require(_ticketPrice > 0, "Invalid ticket price");
         require(_duration > 0, "Invalid duration");
         require(_maxTicketsPerUser > 0, "Invalid max tickets per user");
         require(_minTicketsNeededToDraw > 0, "Invalid minimum tickets");
+        
+        // Check if NFT contract is whitelisted (if not zero address)
+        if (_whitelistNftContract != address(0)) {
+            require(whitelistedNFTContracts[_whitelistNftContract], "NFT contract not whitelisted");
+        }
 
         uint256 raffleId = ++raffleCounter;
 
@@ -145,6 +155,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         raffle.endTime = uint32(block.timestamp + _duration);
         raffle.prizeType = _prizeType;
         raffle.status = uint8(RaffleStatus.ACTIVE);
+        raffle.whitelistNftContract = _whitelistNftContract;
 
         // Transfer prize to contract
         _transferPrizeToContract(
@@ -154,7 +165,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
             _prizeTokenId
         );
 
-        emit RaffleCreated(raffleId, msg.sender, _prizeContract, _prizeAmount);
+        emit RaffleCreated(raffleId, msg.sender, _prizeContract, _prizeAmount, _whitelistNftContract);
         return raffleId;
     }
 
@@ -183,6 +194,14 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         );
         require(block.timestamp < raffle.endTime, "Raffle ended");
         require(_quantity > 0, "Invalid quantity");
+        
+        // Check NFT ownership if raffle requires it
+        if (raffle.whitelistNftContract != address(0)) {
+            require(
+                IERC721(raffle.whitelistNftContract).balanceOf(msg.sender) > 0,
+                "Must own required NFT to participate"
+            );
+        }
 
         uint32 userCurrentTickets = userTickets[_raffleId][msg.sender];
         require(
@@ -416,13 +435,35 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         return uint256(raffle.ticketPrice) * ticketCount;
     }
 
+    /**
+     * @dev Get whitelist NFT contract address for a raffle
+     */
+    function getRaffleWhitelistNftContract(uint256 _raffleId) external view returns (address) {
+        return raffles[_raffleId].whitelistNftContract;
+    }
+
+    /**
+     * @dev Check if user can participate in raffle (checks NFT ownership if required)
+     */
+    function canUserParticipate(uint256 _raffleId, address _user) external view returns (bool) {
+        Raffle storage raffle = raffles[_raffleId];
+        
+        // If no NFT contract specified, anyone can participate
+        if (raffle.whitelistNftContract == address(0)) {
+            return true;
+        }
+        
+        // Check if user owns the required NFT
+        return IERC721(raffle.whitelistNftContract).balanceOf(_user) > 0;
+    }
+
     // Admin functions
 
     /**
      * @dev Update fee percentage (only owner)
      */
     function updateFeePercentage(uint256 _newFeePercentage) external onlyOwner {
-        require(_newFeePercentage <= 20, "Fee too high"); // Max 20%
+        require(_newFeePercentage <= 2000, "Fee too high"); // Max 20% (2000 basis points)
         feePercentage = _newFeePercentage;
         emit FeeUpdated(_newFeePercentage);
     }
@@ -450,6 +491,33 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
             IERC20 token = IERC20(_token);
             token.transfer(owner(), token.balanceOf(address(this)));
         }
+    }
+
+    /**
+     * @dev Whitelist/unwhitelist NFT contract (only owner)
+     */
+    function setNFTContractWhitelist(address _nftContract, bool _status) external onlyOwner {
+        require(_nftContract != address(0), "Invalid NFT contract address");
+        whitelistedNFTContracts[_nftContract] = _status;
+        emit NFTContractWhitelisted(_nftContract, _status);
+    }
+
+    /**
+     * @dev Batch whitelist/unwhitelist NFT contracts (only owner)
+     */
+    function batchSetNFTContractWhitelist(address[] calldata _nftContracts, bool _status) external onlyOwner {
+        for (uint256 i = 0; i < _nftContracts.length; i++) {
+            require(_nftContracts[i] != address(0), "Invalid NFT contract address");
+            whitelistedNFTContracts[_nftContracts[i]] = _status;
+            emit NFTContractWhitelisted(_nftContracts[i], _status);
+        }
+    }
+
+    /**
+     * @dev Check if NFT contract is whitelisted
+     */
+    function isNFTContractWhitelisted(address _nftContract) external view returns (bool) {
+        return whitelistedNFTContracts[_nftContract];
     }
 
     // Internal functions
@@ -532,7 +600,7 @@ contract RaffleOnape is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         Raffle storage raffle = raffles[_raffleId];
         uint256 totalRevenue = uint256(raffle.ticketPrice) *
             raffle.currentTickets;
-        uint256 fee = (totalRevenue * feePercentage) / 100;
+        uint256 fee = (totalRevenue * feePercentage) / 10000;
         uint256 creatorAmount = totalRevenue - fee;
 
         if (raffle.paymentToken == address(0)) {

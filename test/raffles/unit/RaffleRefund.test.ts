@@ -38,7 +38,8 @@ describe("RaffleRefund", function () {
         maxTicketsPerUser,
         totalMaxTickets,
         minTicketsNeededToDraw,
-        duration
+        duration,
+        ethers.constants.AddressZero // whitelistNftContract
       );
 
       // Buy only 5 tickets (less than minimum)
@@ -72,7 +73,9 @@ describe("RaffleRefund", function () {
       const duration = 86400;
 
       // Setup raffle
-      await mockERC20.connect(creator1).approve(raffleContract.address, prizeAmount);
+      await mockERC20
+        .connect(creator1)
+        .approve(raffleContract.address, prizeAmount);
       await raffleContract.connect(creator1).createRaffle(
         0,
         mockERC20.address,
@@ -83,7 +86,8 @@ describe("RaffleRefund", function () {
         maxTicketsPerUser,
         totalMaxTickets,
         minTicketsNeededToDraw,
-        duration
+        duration,
+        ethers.constants.AddressZero // whitelistNftContract
       );
 
       // Buy tickets
@@ -125,8 +129,10 @@ describe("RaffleRefund", function () {
         .withArgs(1, buyer2.address, ticketPrice.mul(buyer2Tickets));
 
       // Check refund status
-      expect(await raffleContract.hasUserRefunded(1, buyer1.address)).to.be.true;
-      expect(await raffleContract.hasUserRefunded(1, buyer2.address)).to.be.true;
+      expect(await raffleContract.hasUserRefunded(1, buyer1.address)).to.be
+        .true;
+      expect(await raffleContract.hasUserRefunded(1, buyer2.address)).to.be
+        .true;
 
       // Check refund amounts are now 0
       expect(await raffleContract.getRefundAmount(1, buyer1.address)).to.equal(
@@ -145,7 +151,9 @@ describe("RaffleRefund", function () {
       const ticketPrice = ethers.utils.parseEther("1");
 
       // Setup raffle in refund mode
-      await mockERC20.connect(creator1).approve(raffleContract.address, prizeAmount);
+      await mockERC20
+        .connect(creator1)
+        .approve(raffleContract.address, prizeAmount);
       await raffleContract.connect(creator1).createRaffle(
         0,
         mockERC20.address,
@@ -156,7 +164,8 @@ describe("RaffleRefund", function () {
         10,
         100,
         10,
-        86400
+        86400,
+        ethers.constants.AddressZero // whitelistNftContract
       );
 
       await raffleContract.connect(buyer1).buyTickets(1, 3, {
@@ -183,7 +192,9 @@ describe("RaffleRefund", function () {
       const ticketPrice = ethers.utils.parseEther("1");
 
       // Setup raffle
-      await mockERC20.connect(creator1).approve(raffleContract.address, prizeAmount);
+      await mockERC20
+        .connect(creator1)
+        .approve(raffleContract.address, prizeAmount);
       await raffleContract.connect(creator1).createRaffle(
         0,
         mockERC20.address,
@@ -194,7 +205,8 @@ describe("RaffleRefund", function () {
         10,
         100,
         5,
-        86400 // minTicketsNeededToDraw = 5
+        86400, // minTicketsNeededToDraw = 5
+        ethers.constants.AddressZero // whitelistNftContract
       );
 
       // Buy enough tickets to meet minimum
@@ -228,7 +240,9 @@ describe("RaffleRefund", function () {
       const initialBalance = await mockERC20.balanceOf(creator1.address);
 
       // Setup and trigger refund
-      await mockERC20.connect(creator1).approve(raffleContract.address, prizeAmount);
+      await mockERC20
+        .connect(creator1)
+        .approve(raffleContract.address, prizeAmount);
       await raffleContract.connect(creator1).createRaffle(
         0,
         mockERC20.address,
@@ -239,7 +253,8 @@ describe("RaffleRefund", function () {
         10,
         100,
         10,
-        86400
+        86400,
+        ethers.constants.AddressZero // whitelistNftContract
       );
 
       await raffleContract.connect(buyer1).buyTickets(1, 3, {

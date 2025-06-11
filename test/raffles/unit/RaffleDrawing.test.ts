@@ -78,7 +78,8 @@ describe("RaffleDrawing", function () {
             5,
             10, // Only 10 total tickets
             1,
-            3600
+            3600,
+            ethers.constants.AddressZero // whitelistNftContract
           );
 
         const receipt = await lowMaxRaffleId.wait();

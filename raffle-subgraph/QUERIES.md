@@ -339,6 +339,92 @@ query GetGlobalStats {
     totalValueLocked
     totalRefunds
     totalPrizesClaimed
+    totalVolume
+    totalFeesGenerated
+    totalCreatorEarnings
+  }
+}
+```
+
+### Get Volume and Fee Analytics
+
+```graphql
+query GetVolumeAnalytics {
+  globalStats(id: "0x01") {
+    totalVolume
+    totalFeesGenerated
+    totalCreatorEarnings
+  }
+  
+  # Recent volume snapshots
+  volumeSnapshots(
+    first: 10
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    timestamp
+    totalVolume
+    totalFees
+    totalTicketsSold
+    totalRaffles
+    blockNumber
+  }
+}
+```
+
+### Get Daily/Weekly/Monthly Volume Data
+
+```graphql
+query GetDailyVolume($days: Int = 30) {
+  dailyVolumes(
+    first: $days
+    orderBy: date
+    orderDirection: desc
+  ) {
+    id
+    date
+    volume
+    fees
+    ticketsSold
+    rafflesCreated
+    uniqueParticipants
+  }
+}
+```
+
+```graphql
+query GetWeeklyVolume($weeks: Int = 12) {
+  weeklyVolumes(
+    first: $weeks
+    orderBy: weekStart
+    orderDirection: desc
+  ) {
+    id
+    weekStart
+    volume
+    fees
+    ticketsSold
+    rafflesCreated
+    uniqueParticipants
+  }
+}
+```
+
+```graphql
+query GetMonthlyVolume($months: Int = 12) {
+  monthlyVolumes(
+    first: $months
+    orderBy: monthStart
+    orderDirection: desc
+  ) {
+    id
+    monthStart
+    volume
+    fees
+    ticketsSold
+    rafflesCreated
+    uniqueParticipants
   }
 }
 ```
@@ -509,3 +595,239 @@ Variables for page 2 (next 10 items):
 - Addresses are represented as `Bytes` type in lowercase hex format
 - BigInt values should be passed as strings in variables
 - The subgraph endpoint will be available after deployment on The Graph Network or local Graph Node
+## Leaderboard Queries
+
+### Get Top Participants (by tickets purchased)
+
+```graphql
+query GetTopParticipants($limit: Int = 10) {
+  topParticipants(
+    first: $limit
+    orderBy: totalTicketsPurchased
+    orderDirection: desc
+  ) {
+    id
+    user {
+      id
+      totalTicketsPurchased
+      totalVolumeSpent
+      totalPrizesWon
+      createdAt
+    }
+    totalTicketsPurchased
+    totalVolumeSpent
+    rank
+    lastUpdated
+  }
+}
+```
+
+### Get Top Winners (by prizes won)
+
+```graphql
+query GetTopWinners($limit: Int = 10) {
+  topWinners(
+    first: $limit
+    orderBy: totalPrizesWon
+    orderDirection: desc
+  ) {
+    id
+    user {
+      id
+      totalPrizesWon
+      totalTicketsPurchased
+      createdAt
+    }
+    totalPrizesWon
+    totalPrizeValue
+    rank
+    lastUpdated
+  }
+}
+```
+
+### Get Top Creators (by raffles created and volume generated)
+
+```graphql
+query GetTopCreators($limit: Int = 10) {
+  topCreators(
+    first: $limit
+    orderBy: totalVolumeGenerated
+    orderDirection: desc
+  ) {
+    id
+    user {
+      id
+      totalRafflesCreated
+      totalVolumeEarned
+      totalFeesGenerated
+      createdAt
+    }
+    totalRafflesCreated
+    totalVolumeGenerated
+    totalFeesGenerated
+    rank
+    lastUpdated
+  }
+}
+```
+
+### Get User Volume and Fee Statistics
+
+```graphql
+query GetUserVolumeStats($userAddress: Bytes!) {
+  user(id: $userAddress) {
+    id
+    totalRafflesCreated
+    totalTicketsPurchased
+    totalRefundsClaimed
+    totalPrizesWon
+    totalVolumeSpent
+    totalVolumeEarned
+    totalFeesGenerated
+    createdAt
+  }
+}
+```
+
+### Get Fee History
+
+```graphql
+query GetFeeHistory($limit: Int = 20) {
+  feeUpdatedEvents(
+    first: $limit
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    newFeePercentage
+    timestamp
+    blockNumber
+    transactionHash
+  }
+}
+```
+
+### Combined Leaderboard Dashboard Query
+
+```graphql
+query GetLeaderboardDashboard {
+  # Global stats
+  globalStats(id: "0x01") {
+    totalRaffles
+    totalTicketsSold
+    totalVolume
+    totalFeesGenerated
+    totalCreatorEarnings
+  }
+  
+  # Top participants
+  topParticipants(first: 5, orderBy: totalVolumeSpent, orderDirection: desc) {
+    user {
+      id
+    }
+    totalTicketsPurchased
+    totalVolumeSpent
+  }
+  
+  # Top winners
+  topWinners(first: 5, orderBy: totalPrizesWon, orderDirection: desc) {
+    user {
+      id
+    }
+    totalPrizesWon
+    totalPrizeValue
+  }
+  
+  # Top creators
+  topCreators(first: 5, orderBy: totalVolumeGenerated, orderDirection: desc) {
+    user {
+      id
+    }
+    totalRafflesCreated
+    totalVolumeGenerated
+    totalFeesGenerated
+  }
+  
+  # Recent volume data
+  dailyVolumes(first: 7, orderBy: date, orderDirection: desc) {
+    date
+    volume
+    fees
+    ticketsSold
+  }
+}
+```
+
+## Analytics Queries
+
+### Get Volume Trends
+
+```graphql
+query GetVolumeTrends($fromDate: BigInt!, $toDate: BigInt!) {
+  dailyVolumes(
+    where: { 
+      date_gte: $fromDate,
+      date_lte: $toDate
+    }
+    orderBy: date
+    orderDirection: asc
+  ) {
+    date
+    volume
+    fees
+    ticketsSold
+    rafflesCreated
+    uniqueParticipants
+  }
+}
+```
+
+### Get User Performance Over Time
+
+```graphql
+query GetUserPerformance($userAddress: Bytes!) {
+  user(id: $userAddress) {
+    id
+    totalVolumeSpent
+    totalVolumeEarned
+    totalFeesGenerated
+    
+    # Recent tickets purchased
+    tickets(
+      first: 10
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      quantity
+      timestamp
+      raffle {
+        raffleId
+        ticketPrice
+        status
+      }
+    }
+    
+    # Recent raffles created
+    rafflesCreated(
+      first: 10
+      orderBy: createdAt
+      orderDirection: desc
+    ) {
+      raffleId
+      prizeAmount
+      currentTickets
+      status
+      createdAt
+    }
+    
+    # Prizes won
+    rafflesWon {
+      raffleId
+      prizeAmount
+      prizeType
+      createdAt
+    }
+  }
+}
+```

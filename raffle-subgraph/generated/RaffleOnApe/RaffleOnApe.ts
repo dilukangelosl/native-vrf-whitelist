@@ -28,6 +28,28 @@ export class FeeUpdated__Params {
   }
 }
 
+export class NFTContractWhitelisted extends ethereum.Event {
+  get params(): NFTContractWhitelisted__Params {
+    return new NFTContractWhitelisted__Params(this);
+  }
+}
+
+export class NFTContractWhitelisted__Params {
+  _event: NFTContractWhitelisted;
+
+  constructor(event: NFTContractWhitelisted) {
+    this._event = event;
+  }
+
+  get nftContract(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get status(): boolean {
+    return this._event.parameters[1].value.toBoolean();
+  }
+}
+
 export class NativeVRFUpdated extends ethereum.Event {
   get params(): NativeVRFUpdated__Params {
     return new NativeVRFUpdated__Params(this);
@@ -139,6 +161,10 @@ export class RaffleCreated__Params {
 
   get prizeAmount(): BigInt {
     return this._event.parameters[3].value.toBigInt();
+  }
+
+  get whitelistNftContract(): Address {
+    return this._event.parameters[4].value.toAddress();
   }
 }
 
@@ -294,6 +320,10 @@ export class RaffleOnApe__getRaffleResultValue0Struct extends ethereum.Tuple {
   get status(): i32 {
     return this[13].toI32();
   }
+
+  get whitelistNftContract(): Address {
+    return this[14].toAddress();
+  }
 }
 
 export class RaffleOnApe__getRafflesResultValue0Struct extends ethereum.Tuple {
@@ -352,6 +382,10 @@ export class RaffleOnApe__getRafflesResultValue0Struct extends ethereum.Tuple {
   get status(): i32 {
     return this[13].toI32();
   }
+
+  get whitelistNftContract(): Address {
+    return this[14].toAddress();
+  }
 }
 
 export class RaffleOnApe__getRafflesResult {
@@ -397,6 +431,7 @@ export class RaffleOnApe__rafflesResult {
   value11: BigInt;
   value12: i32;
   value13: i32;
+  value14: Address;
 
   constructor(
     value0: Address,
@@ -413,6 +448,7 @@ export class RaffleOnApe__rafflesResult {
     value11: BigInt,
     value12: i32,
     value13: i32,
+    value14: Address,
   ) {
     this.value0 = value0;
     this.value1 = value1;
@@ -428,6 +464,7 @@ export class RaffleOnApe__rafflesResult {
     this.value11 = value11;
     this.value12 = value12;
     this.value13 = value13;
+    this.value14 = value14;
   }
 
   toMap(): TypedMap<string, ethereum.Value> {
@@ -452,6 +489,7 @@ export class RaffleOnApe__rafflesResult {
       "value13",
       ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(this.value13)),
     );
+    map.set("value14", ethereum.Value.fromAddress(this.value14));
     return map;
   }
 
@@ -510,11 +548,62 @@ export class RaffleOnApe__rafflesResult {
   getStatus(): i32 {
     return this.value13;
   }
+
+  getWhitelistNftContract(): Address {
+    return this.value14;
+  }
 }
 
 export class RaffleOnApe extends ethereum.SmartContract {
   static bind(address: Address): RaffleOnApe {
     return new RaffleOnApe("RaffleOnApe", address);
+  }
+
+  canCreate(): boolean {
+    let result = super.call("canCreate", "canCreate():(bool)", []);
+
+    return result[0].toBoolean();
+  }
+
+  try_canCreate(): ethereum.CallResult<boolean> {
+    let result = super.tryCall("canCreate", "canCreate():(bool)", []);
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBoolean());
+  }
+
+  canUserParticipate(_raffleId: BigInt, _user: Address): boolean {
+    let result = super.call(
+      "canUserParticipate",
+      "canUserParticipate(uint256,address):(bool)",
+      [
+        ethereum.Value.fromUnsignedBigInt(_raffleId),
+        ethereum.Value.fromAddress(_user),
+      ],
+    );
+
+    return result[0].toBoolean();
+  }
+
+  try_canUserParticipate(
+    _raffleId: BigInt,
+    _user: Address,
+  ): ethereum.CallResult<boolean> {
+    let result = super.tryCall(
+      "canUserParticipate",
+      "canUserParticipate(uint256,address):(bool)",
+      [
+        ethereum.Value.fromUnsignedBigInt(_raffleId),
+        ethereum.Value.fromAddress(_user),
+      ],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBoolean());
   }
 
   createRaffle(
@@ -528,10 +617,11 @@ export class RaffleOnApe extends ethereum.SmartContract {
     _totalMaxTickets: BigInt,
     _minTicketsNeededToDraw: BigInt,
     _duration: BigInt,
+    _whitelistNftContract: Address,
   ): BigInt {
     let result = super.call(
       "createRaffle",
-      "createRaffle(uint8,address,uint128,uint64,address,uint128,uint32,uint32,uint32,uint32):(uint256)",
+      "createRaffle(uint8,address,uint128,uint64,address,uint128,uint32,uint32,uint32,uint32,address):(uint256)",
       [
         ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(_prizeType)),
         ethereum.Value.fromAddress(_prizeContract),
@@ -543,6 +633,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
         ethereum.Value.fromUnsignedBigInt(_totalMaxTickets),
         ethereum.Value.fromUnsignedBigInt(_minTicketsNeededToDraw),
         ethereum.Value.fromUnsignedBigInt(_duration),
+        ethereum.Value.fromAddress(_whitelistNftContract),
       ],
     );
 
@@ -560,10 +651,11 @@ export class RaffleOnApe extends ethereum.SmartContract {
     _totalMaxTickets: BigInt,
     _minTicketsNeededToDraw: BigInt,
     _duration: BigInt,
+    _whitelistNftContract: Address,
   ): ethereum.CallResult<BigInt> {
     let result = super.tryCall(
       "createRaffle",
-      "createRaffle(uint8,address,uint128,uint64,address,uint128,uint32,uint32,uint32,uint32):(uint256)",
+      "createRaffle(uint8,address,uint128,uint64,address,uint128,uint32,uint32,uint32,uint32,address):(uint256)",
       [
         ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(_prizeType)),
         ethereum.Value.fromAddress(_prizeContract),
@@ -575,6 +667,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
         ethereum.Value.fromUnsignedBigInt(_totalMaxTickets),
         ethereum.Value.fromUnsignedBigInt(_minTicketsNeededToDraw),
         ethereum.Value.fromUnsignedBigInt(_duration),
+        ethereum.Value.fromAddress(_whitelistNftContract),
       ],
     );
     if (result.reverted) {
@@ -606,7 +699,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
   getRaffle(_raffleId: BigInt): RaffleOnApe__getRaffleResultValue0Struct {
     let result = super.call(
       "getRaffle",
-      "getRaffle(uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8))",
+      "getRaffle(uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address))",
       [ethereum.Value.fromUnsignedBigInt(_raffleId)],
     );
 
@@ -620,7 +713,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
   ): ethereum.CallResult<RaffleOnApe__getRaffleResultValue0Struct> {
     let result = super.tryCall(
       "getRaffle",
-      "getRaffle(uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8))",
+      "getRaffle(uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address))",
       [ethereum.Value.fromUnsignedBigInt(_raffleId)],
     );
     if (result.reverted) {
@@ -657,10 +750,35 @@ export class RaffleOnApe extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toAddressArray());
   }
 
+  getRaffleWhitelistNftContract(_raffleId: BigInt): Address {
+    let result = super.call(
+      "getRaffleWhitelistNftContract",
+      "getRaffleWhitelistNftContract(uint256):(address)",
+      [ethereum.Value.fromUnsignedBigInt(_raffleId)],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_getRaffleWhitelistNftContract(
+    _raffleId: BigInt,
+  ): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "getRaffleWhitelistNftContract",
+      "getRaffleWhitelistNftContract(uint256):(address)",
+      [ethereum.Value.fromUnsignedBigInt(_raffleId)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
   getRaffles(_offset: BigInt, _limit: BigInt): RaffleOnApe__getRafflesResult {
     let result = super.call(
       "getRaffles",
-      "getRaffles(uint256,uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8)[],uint256)",
+      "getRaffles(uint256,uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address)[],uint256)",
       [
         ethereum.Value.fromUnsignedBigInt(_offset),
         ethereum.Value.fromUnsignedBigInt(_limit),
@@ -679,7 +797,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
   ): ethereum.CallResult<RaffleOnApe__getRafflesResult> {
     let result = super.tryCall(
       "getRaffles",
-      "getRaffles(uint256,uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8)[],uint256)",
+      "getRaffles(uint256,uint256):((address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address)[],uint256)",
       [
         ethereum.Value.fromUnsignedBigInt(_offset),
         ethereum.Value.fromUnsignedBigInt(_limit),
@@ -817,6 +935,31 @@ export class RaffleOnApe extends ethereum.SmartContract {
         ethereum.Value.fromUnsignedBigInt(_raffleId),
         ethereum.Value.fromAddress(_user),
       ],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBoolean());
+  }
+
+  isNFTContractWhitelisted(_nftContract: Address): boolean {
+    let result = super.call(
+      "isNFTContractWhitelisted",
+      "isNFTContractWhitelisted(address):(bool)",
+      [ethereum.Value.fromAddress(_nftContract)],
+    );
+
+    return result[0].toBoolean();
+  }
+
+  try_isNFTContractWhitelisted(
+    _nftContract: Address,
+  ): ethereum.CallResult<boolean> {
+    let result = super.tryCall(
+      "isNFTContractWhitelisted",
+      "isNFTContractWhitelisted(address):(bool)",
+      [ethereum.Value.fromAddress(_nftContract)],
     );
     if (result.reverted) {
       return new ethereum.CallResult();
@@ -1069,7 +1212,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
   raffles(param0: BigInt): RaffleOnApe__rafflesResult {
     let result = super.call(
       "raffles",
-      "raffles(uint256):(address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8)",
+      "raffles(uint256):(address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address)",
       [ethereum.Value.fromUnsignedBigInt(param0)],
     );
 
@@ -1088,13 +1231,14 @@ export class RaffleOnApe extends ethereum.SmartContract {
       result[11].toBigInt(),
       result[12].toI32(),
       result[13].toI32(),
+      result[14].toAddress(),
     );
   }
 
   try_raffles(param0: BigInt): ethereum.CallResult<RaffleOnApe__rafflesResult> {
     let result = super.tryCall(
       "raffles",
-      "raffles(uint256):(address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8)",
+      "raffles(uint256):(address,address,address,address,uint128,uint128,uint64,uint32,uint32,uint32,uint32,uint32,uint8,uint8,address)",
       [ethereum.Value.fromUnsignedBigInt(param0)],
     );
     if (result.reverted) {
@@ -1117,6 +1261,7 @@ export class RaffleOnApe extends ethereum.SmartContract {
         value[11].toBigInt(),
         value[12].toI32(),
         value[13].toI32(),
+        value[14].toAddress(),
       ),
     );
   }
@@ -1175,6 +1320,29 @@ export class RaffleOnApe extends ethereum.SmartContract {
     let value = result.value;
     return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
+
+  whitelistedNFTContracts(param0: Address): boolean {
+    let result = super.call(
+      "whitelistedNFTContracts",
+      "whitelistedNFTContracts(address):(bool)",
+      [ethereum.Value.fromAddress(param0)],
+    );
+
+    return result[0].toBoolean();
+  }
+
+  try_whitelistedNFTContracts(param0: Address): ethereum.CallResult<boolean> {
+    let result = super.tryCall(
+      "whitelistedNFTContracts",
+      "whitelistedNFTContracts(address):(bool)",
+      [ethereum.Value.fromAddress(param0)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBoolean());
+  }
 }
 
 export class ConstructorCall extends ethereum.Call {
@@ -1203,6 +1371,40 @@ export class ConstructorCall__Outputs {
   _call: ConstructorCall;
 
   constructor(call: ConstructorCall) {
+    this._call = call;
+  }
+}
+
+export class BatchSetNFTContractWhitelistCall extends ethereum.Call {
+  get inputs(): BatchSetNFTContractWhitelistCall__Inputs {
+    return new BatchSetNFTContractWhitelistCall__Inputs(this);
+  }
+
+  get outputs(): BatchSetNFTContractWhitelistCall__Outputs {
+    return new BatchSetNFTContractWhitelistCall__Outputs(this);
+  }
+}
+
+export class BatchSetNFTContractWhitelistCall__Inputs {
+  _call: BatchSetNFTContractWhitelistCall;
+
+  constructor(call: BatchSetNFTContractWhitelistCall) {
+    this._call = call;
+  }
+
+  get _nftContracts(): Array<Address> {
+    return this._call.inputValues[0].value.toAddressArray();
+  }
+
+  get _status(): boolean {
+    return this._call.inputValues[1].value.toBoolean();
+  }
+}
+
+export class BatchSetNFTContractWhitelistCall__Outputs {
+  _call: BatchSetNFTContractWhitelistCall;
+
+  constructor(call: BatchSetNFTContractWhitelistCall) {
     this._call = call;
   }
 }
@@ -1356,6 +1558,10 @@ export class CreateRaffleCall__Inputs {
 
   get _duration(): BigInt {
     return this._call.inputValues[9].value.toBigInt();
+  }
+
+  get _whitelistNftContract(): Address {
+    return this._call.inputValues[10].value.toAddress();
   }
 }
 
@@ -1599,6 +1805,70 @@ export class RenounceOwnershipCall__Outputs {
   _call: RenounceOwnershipCall;
 
   constructor(call: RenounceOwnershipCall) {
+    this._call = call;
+  }
+}
+
+export class SetNFTContractWhitelistCall extends ethereum.Call {
+  get inputs(): SetNFTContractWhitelistCall__Inputs {
+    return new SetNFTContractWhitelistCall__Inputs(this);
+  }
+
+  get outputs(): SetNFTContractWhitelistCall__Outputs {
+    return new SetNFTContractWhitelistCall__Outputs(this);
+  }
+}
+
+export class SetNFTContractWhitelistCall__Inputs {
+  _call: SetNFTContractWhitelistCall;
+
+  constructor(call: SetNFTContractWhitelistCall) {
+    this._call = call;
+  }
+
+  get _nftContract(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get _status(): boolean {
+    return this._call.inputValues[1].value.toBoolean();
+  }
+}
+
+export class SetNFTContractWhitelistCall__Outputs {
+  _call: SetNFTContractWhitelistCall;
+
+  constructor(call: SetNFTContractWhitelistCall) {
+    this._call = call;
+  }
+}
+
+export class SetRaffleCreationStatusCall extends ethereum.Call {
+  get inputs(): SetRaffleCreationStatusCall__Inputs {
+    return new SetRaffleCreationStatusCall__Inputs(this);
+  }
+
+  get outputs(): SetRaffleCreationStatusCall__Outputs {
+    return new SetRaffleCreationStatusCall__Outputs(this);
+  }
+}
+
+export class SetRaffleCreationStatusCall__Inputs {
+  _call: SetRaffleCreationStatusCall;
+
+  constructor(call: SetRaffleCreationStatusCall) {
+    this._call = call;
+  }
+
+  get _canCreate(): boolean {
+    return this._call.inputValues[0].value.toBoolean();
+  }
+}
+
+export class SetRaffleCreationStatusCall__Outputs {
+  _call: SetRaffleCreationStatusCall;
+
+  constructor(call: SetRaffleCreationStatusCall) {
     this._call = call;
   }
 }

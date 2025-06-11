@@ -9,6 +9,7 @@ import {
   RefundClaimed as RefundClaimedEvent,
   FeeUpdated as FeeUpdatedEvent,
   NativeVRFUpdated as NativeVRFUpdatedEvent,
+  NFTContractWhitelisted as NFTContractWhitelistedEvent,
   RaffleOnApe,
 } from "../generated/RaffleOnApe/RaffleOnApe";
 import {
@@ -22,6 +23,7 @@ import {
   PrizeClaimedEvent as PrizeClaimedEventEntity,
   RaffleCancelledEvent as RaffleCancelledEventEntity,
   RefundAvailableEvent as RefundAvailableEventEntity,
+  NFTContractWhitelistedEvent as NFTContractWhitelistedEventEntity,
 } from "../generated/schema";
 
 // Helper function to get or create user
@@ -33,6 +35,9 @@ function getOrCreateUser(address: Address, timestamp: BigInt): User {
     user.totalTicketsPurchased = BigInt.fromI32(0);
     user.totalRefundsClaimed = BigInt.fromI32(0);
     user.totalPrizesWon = BigInt.fromI32(0);
+    user.totalVolumeSpent = BigInt.fromI32(0);
+    user.totalVolumeEarned = BigInt.fromI32(0);
+    user.totalFeesGenerated = BigInt.fromI32(0);
     user.createdAt = timestamp;
     user.save();
   }
@@ -49,6 +54,9 @@ function getOrCreateGlobalStats(): GlobalStats {
     stats.totalValueLocked = BigInt.fromI32(0);
     stats.totalRefunds = BigInt.fromI32(0);
     stats.totalPrizesClaimed = BigInt.fromI32(0);
+    stats.totalVolume = BigInt.fromI32(0);
+    stats.totalFeesGenerated = BigInt.fromI32(0);
+    stats.totalCreatorEarnings = BigInt.fromI32(0);
     stats.save();
   }
   return stats;
@@ -66,6 +74,7 @@ export function handleRaffleCreated(event: RaffleCreatedEvent): void {
   raffle.creator = user.id;
   raffle.prizeContract = event.params.prizeContract;
   raffle.prizeAmount = event.params.prizeAmount;
+  raffle.whitelistNftContract = event.params.whitelistNftContract;
   raffle.createdAt = event.block.timestamp;
   raffle.blockNumber = event.block.number;
   raffle.transactionHash = event.transaction.hash;
@@ -101,6 +110,7 @@ export function handleRaffleCreated(event: RaffleCreatedEvent): void {
   eventEntity.creator = event.params.creator;
   eventEntity.prizeContract = event.params.prizeContract;
   eventEntity.prizeAmount = event.params.prizeAmount;
+  eventEntity.whitelistNftContract = event.params.whitelistNftContract;
   eventEntity.timestamp = event.block.timestamp;
   eventEntity.blockNumber = event.block.number;
   eventEntity.transactionHash = event.transaction.hash;
@@ -132,7 +142,7 @@ export function handleTicketPurchased(event: TicketPurchasedEvent): void {
   ticket.transactionHash = event.transaction.hash;
   ticket.save();
 
-  // Update raffle current tickets
+  // Get raffle and calculate volume
   const raffle = Raffle.load(
     Bytes.fromByteArray(Bytes.fromBigInt(event.params.raffleId))
   );
@@ -141,6 +151,41 @@ export function handleTicketPurchased(event: TicketPurchasedEvent): void {
     const raffleData = contract.getRaffle(event.params.raffleId);
     raffle.currentTickets = BigInt.fromI32(raffleData.currentTickets.toI32());
     raffle.save();
+
+    // Calculate ticket purchase volume
+    const ticketVolume = raffle.ticketPrice.times(
+      BigInt.fromI32(event.params.quantity.toI32())
+    );
+
+    // Calculate fees (6.9% default, but get current fee from contract in basis points)
+    const feePercentage = contract.feePercentage();
+    const fees = ticketVolume
+      .times(BigInt.fromI32(feePercentage.toI32()))
+      .div(BigInt.fromI32(10000));
+    const creatorEarnings = ticketVolume.minus(fees);
+
+    // Update user volume stats
+    user.totalVolumeSpent = user.totalVolumeSpent.plus(ticketVolume);
+
+    // Update raffle creator earnings
+    const creator = getOrCreateUser(
+      Address.fromBytes(raffle.creator),
+      event.block.timestamp
+    );
+    creator.totalVolumeEarned = creator.totalVolumeEarned.plus(creatorEarnings);
+    creator.totalFeesGenerated = creator.totalFeesGenerated.plus(fees);
+    creator.save();
+
+    // Update global stats with volume and fees
+    const stats = getOrCreateGlobalStats();
+    stats.totalVolume = stats.totalVolume.plus(ticketVolume);
+    stats.totalFeesGenerated = stats.totalFeesGenerated.plus(fees);
+    stats.totalCreatorEarnings =
+      stats.totalCreatorEarnings.plus(creatorEarnings);
+    stats.totalTicketsSold = stats.totalTicketsSold.plus(
+      BigInt.fromI32(event.params.quantity.toI32())
+    );
+    stats.save();
   }
 
   // Update user stats
@@ -148,13 +193,6 @@ export function handleTicketPurchased(event: TicketPurchasedEvent): void {
     BigInt.fromI32(event.params.quantity.toI32())
   );
   user.save();
-
-  // Update global stats
-  const stats = getOrCreateGlobalStats();
-  stats.totalTicketsSold = stats.totalTicketsSold.plus(
-    BigInt.fromI32(event.params.quantity.toI32())
-  );
-  stats.save();
 }
 
 export function handleRaffleDrawn(event: RaffleDrawnEvent): void {
@@ -297,11 +335,76 @@ export function handleRefundClaimed(event: RefundClaimedEvent): void {
 }
 
 export function handleFeeUpdated(event: FeeUpdatedEvent): void {
-  // This is an admin event, we can log it or track fee changes if needed
-  // For now, we'll just acknowledge it exists
+  // TODO: Create fee updated event entity for tracking fee changes
+  // Will be implemented after code generation
+  // const feeEvent = new FeeUpdatedEventEntity(
+  //   event.transaction.hash.concatI32(event.logIndex.toI32())
+  // );
+  // feeEvent.newFeePercentage = event.params.newFeePercentage;
+  // feeEvent.timestamp = event.block.timestamp;
+  // feeEvent.blockNumber = event.block.number;
+  // feeEvent.transactionHash = event.transaction.hash;
+  // feeEvent.save();
 }
+
+// Helper functions for leaderboard management (to be implemented after code generation)
+
+// function updateTopParticipant(user: User): void {
+//   let participant = TopParticipant.load(user.id);
+//   if (participant == null) {
+//     participant = new TopParticipant(user.id);
+//     participant.user = user.id;
+//     participant.rank = BigInt.fromI32(0);
+//   }
+//   participant.totalTicketsPurchased = user.totalTicketsPurchased;
+//   participant.totalVolumeSpent = user.totalVolumeSpent;
+//   participant.lastUpdated = BigInt.fromI32(Date.now());
+//   participant.save();
+// }
+
+// function updateTopWinner(user: User): void {
+//   let winner = TopWinner.load(user.id);
+//   if (winner == null) {
+//     winner = new TopWinner(user.id);
+//     winner.user = user.id;
+//     winner.rank = BigInt.fromI32(0);
+//     winner.totalPrizeValue = BigInt.fromI32(0);
+//   }
+//   winner.totalPrizesWon = user.totalPrizesWon;
+//   winner.lastUpdated = BigInt.fromI32(Date.now());
+//   winner.save();
+// }
+
+// function updateTopCreator(user: User): void {
+//   let creator = TopCreator.load(user.id);
+//   if (creator == null) {
+//     creator = new TopCreator(user.id);
+//     creator.user = user.id;
+//     creator.rank = BigInt.fromI32(0);
+//   }
+//   creator.totalRafflesCreated = user.totalRafflesCreated;
+//   creator.totalVolumeGenerated = user.totalVolumeEarned;
+//   creator.totalFeesGenerated = user.totalFeesGenerated;
+//   creator.lastUpdated = BigInt.fromI32(Date.now());
+//   creator.save();
+// }
 
 export function handleNativeVRFUpdated(event: NativeVRFUpdatedEvent): void {
   // This is an admin event, we can log it or track VRF address changes if needed
   // For now, we'll just acknowledge it exists
+}
+
+export function handleNFTContractWhitelisted(
+  event: NFTContractWhitelistedEvent
+): void {
+  // Create NFT contract whitelist event entity
+  const eventEntity = new NFTContractWhitelistedEventEntity(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  );
+  eventEntity.nftContract = event.params.nftContract;
+  eventEntity.status = event.params.status;
+  eventEntity.timestamp = event.block.timestamp;
+  eventEntity.blockNumber = event.block.number;
+  eventEntity.transactionHash = event.transaction.hash;
+  eventEntity.save();
 }

@@ -29,6 +29,25 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "status",
+        "type": "bool"
+      }
+    ],
+    "name": "NFTContractWhitelisted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "oldAddress",
         "type": "address"
       },
@@ -119,6 +138,12 @@
         "internalType": "uint256",
         "name": "prizeAmount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "whitelistNftContract",
+        "type": "address"
       }
     ],
     "name": "RaffleCreated",
@@ -215,6 +240,24 @@
   {
     "inputs": [
       {
+        "internalType": "address[]",
+        "name": "_nftContracts",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "_status",
+        "type": "bool"
+      }
+    ],
+    "name": "batchSetNFTContractWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_raffleId",
         "type": "uint256"
@@ -228,6 +271,43 @@
     "name": "buyTickets",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "canCreate",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_raffleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "canUserParticipate",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -307,6 +387,11 @@
         "internalType": "uint32",
         "name": "_duration",
         "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_whitelistNftContract",
+        "type": "address"
       }
     ],
     "name": "createRaffle",
@@ -440,6 +525,11 @@
             "internalType": "uint8",
             "name": "status",
             "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "whitelistNftContract",
+            "type": "address"
           }
         ],
         "internalType": "struct RaffleOnape.Raffle",
@@ -464,6 +554,25 @@
         "internalType": "address[]",
         "name": "",
         "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRaffleWhitelistNftContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -555,6 +664,11 @@
             "internalType": "uint8",
             "name": "status",
             "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "whitelistNftContract",
+            "type": "address"
           }
         ],
         "internalType": "struct RaffleOnape.Raffle[]",
@@ -656,6 +770,25 @@
       }
     ],
     "name": "hasUserRefunded",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nftContract",
+        "type": "address"
+      }
+    ],
+    "name": "isNFTContractWhitelisted",
     "outputs": [
       {
         "internalType": "bool",
@@ -939,6 +1072,11 @@
         "internalType": "uint8",
         "name": "status",
         "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "whitelistNftContract",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -947,6 +1085,37 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_status",
+        "type": "bool"
+      }
+    ],
+    "name": "setNFTContractWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_canCreate",
+        "type": "bool"
+      }
+    ],
+    "name": "setRaffleCreationStatus",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1028,6 +1197,25 @@
         "internalType": "uint32",
         "name": "",
         "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "whitelistedNFTContracts",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

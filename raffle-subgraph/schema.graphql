@@ -16,6 +16,7 @@ type Raffle @entity {
   minTicketsNeededToDraw: BigInt!
   prizeType: Int! # 0=ERC20, 1=ERC721, 2=ERC1155
   status: Int! # 0=ACTIVE, 1=DRAWN, 2=CANCELLED, 3=REFUND_AVAILABLE
+  whitelistNftContract: Bytes # NFT contract address for whitelist (null for open raffles)
   vrfRequestId: BigInt # VRF request ID
   createdAt: BigInt!
   blockNumber: BigInt!
@@ -55,6 +56,9 @@ type User @entity {
   totalTicketsPurchased: BigInt!
   totalRefundsClaimed: BigInt!
   totalPrizesWon: BigInt!
+  totalVolumeSpent: BigInt! # Total amount spent on tickets (in wei)
+  totalVolumeEarned: BigInt! # Total amount earned from raffle sales (in wei)
+  totalFeesGenerated: BigInt! # Total fees generated from their raffles (in wei)
   createdAt: BigInt!
   
   # Relations
@@ -72,6 +76,9 @@ type GlobalStats @entity {
   totalValueLocked: BigInt! # in wei
   totalRefunds: BigInt!
   totalPrizesClaimed: BigInt!
+  totalVolume: BigInt! # Total volume of all ticket sales (in wei)
+  totalFeesGenerated: BigInt! # Total fees collected by the contract (in wei)
+  totalCreatorEarnings: BigInt! # Total earnings distributed to raffle creators (in wei)
 }
 
 # Event entities for historical tracking
@@ -81,6 +88,7 @@ type RaffleCreatedEvent @entity {
   creator: Bytes!
   prizeContract: Bytes!
   prizeAmount: BigInt!
+  whitelistNftContract: Bytes # NFT contract address for whitelist (null for open raffles)
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
@@ -119,4 +127,92 @@ type RefundAvailableEvent @entity {
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
+}
+
+# Fee tracking entities
+type FeeUpdatedEvent @entity {
+  id: Bytes! # transaction hash + log index
+  newFeePercentage: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type NFTContractWhitelistedEvent @entity {
+  id: Bytes! # transaction hash + log index
+  nftContract: Bytes!
+  status: Boolean!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type VolumeSnapshot @entity {
+  id: Bytes! # timestamp as bytes
+  timestamp: BigInt!
+  totalVolume: BigInt!
+  totalFees: BigInt!
+  totalTicketsSold: BigInt!
+  totalRaffles: BigInt!
+  blockNumber: BigInt!
+}
+
+# Leaderboard entities
+type TopParticipant @entity {
+  id: Bytes! # user address
+  user: User!
+  totalTicketsPurchased: BigInt!
+  totalVolumeSpent: BigInt!
+  rank: BigInt!
+  lastUpdated: BigInt!
+}
+
+type TopWinner @entity {
+  id: Bytes! # user address
+  user: User!
+  totalPrizesWon: BigInt!
+  totalPrizeValue: BigInt! # Estimated total value of prizes won
+  rank: BigInt!
+  lastUpdated: BigInt!
+}
+
+type TopCreator @entity {
+  id: Bytes! # user address
+  user: User!
+  totalRafflesCreated: BigInt!
+  totalVolumeGenerated: BigInt! # Total volume from their raffles
+  totalFeesGenerated: BigInt!
+  rank: BigInt!
+  lastUpdated: BigInt!
+}
+
+# Daily/Weekly/Monthly aggregates for analytics
+type DailyVolume @entity {
+  id: Bytes! # date as bytes (YYYY-MM-DD)
+  date: BigInt! # timestamp of start of day
+  volume: BigInt!
+  fees: BigInt!
+  ticketsSold: BigInt!
+  rafflesCreated: BigInt!
+  uniqueParticipants: BigInt!
+}
+
+type WeeklyVolume @entity {
+  id: Bytes! # week start date as bytes
+  weekStart: BigInt! # timestamp of start of week
+  volume: BigInt!
+  fees: BigInt!
+  ticketsSold: BigInt!
+  rafflesCreated: BigInt!
+  uniqueParticipants: BigInt!
+}
+
+type MonthlyVolume @entity {
+  id: Bytes! # month as bytes (YYYY-MM)
+  monthStart: BigInt! # timestamp of start of month
+  volume: BigInt!
+  fees: BigInt!
+  ticketsSold: BigInt!
+  rafflesCreated: BigInt!
+  uniqueParticipants: BigInt!
 }

@@ -71,7 +71,8 @@ contract AttackerContract {
         uint128 _ticketPrice,
         uint32 _maxTicketsPerUser,
         uint32 _totalMaxTickets,
-        uint32 _duration
+        uint32 _duration,
+        address _whitelistNftContract
     ) external {
         attacking = true;
         attackCount = 0;
@@ -85,7 +86,8 @@ contract AttackerContract {
             _maxTicketsPerUser,
             _totalMaxTickets,
             1,
-            _duration
+            _duration,
+            _whitelistNftContract
         );
     }
 

@@ -39,10 +39,10 @@ describe("RaffleCreation", function () {
       expect(await raffleContract.raffleCounter()).to.equal(0);
     });
 
-    it("Should have feePercentage = 7", async function () {
+    it("Should have feePercentage = 690 (6.9% in basis points)", async function () {
       const { raffleContract } = fixtures;
 
-      expect(await raffleContract.feePercentage()).to.equal(7);
+      expect(await raffleContract.feePercentage()).to.equal(690);
     });
 
     it("Should allow zero address for nativeVRF (no validation in constructor)", async function () {
@@ -65,20 +65,19 @@ describe("RaffleCreation", function () {
         const { raffleContract, mockERC20, accounts } = fixtures;
         const params = TEST_DATA.RAFFLE_PARAMS.ERC20;
 
-        const tx = await raffleContract
-          .connect(accounts.creator1)
-          .createRaffle(
-            params.prizeType,
-            mockERC20.address,
-            params.prizeAmount,
-            0,
-            ethers.constants.AddressZero,
-            params.ticketPrice,
-            params.maxTicketsPerUser,
-            params.totalMaxTickets,
-            1,
-            params.duration
-          );
+        const tx = await raffleContract.connect(accounts.creator1).createRaffle(
+          params.prizeType,
+          mockERC20.address,
+          params.prizeAmount,
+          0,
+          ethers.constants.AddressZero,
+          params.ticketPrice,
+          params.maxTicketsPerUser,
+          params.totalMaxTickets,
+          1,
+          params.duration,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
 
         const receipt = await tx.wait();
         const event = receipt.events?.find(
@@ -111,20 +110,19 @@ describe("RaffleCreation", function () {
         const { raffleContract, mockERC721, accounts } = fixtures;
         const params = TEST_DATA.RAFFLE_PARAMS.ERC721;
 
-        const tx = await raffleContract
-          .connect(accounts.creator1)
-          .createRaffle(
-            params.prizeType,
-            mockERC721.address,
-            0,
-            (params as any).prizeTokenId,
-            ethers.constants.AddressZero,
-            params.ticketPrice,
-            params.maxTicketsPerUser,
-            params.totalMaxTickets,
-            1,
-            params.duration
-          );
+        const tx = await raffleContract.connect(accounts.creator1).createRaffle(
+          params.prizeType,
+          mockERC721.address,
+          0,
+          (params as any).prizeTokenId,
+          ethers.constants.AddressZero,
+          params.ticketPrice,
+          params.maxTicketsPerUser,
+          params.totalMaxTickets,
+          1,
+          params.duration,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
 
         const receipt = await tx.wait();
         const event = receipt.events?.find(
@@ -143,20 +141,19 @@ describe("RaffleCreation", function () {
         const { raffleContract, mockERC1155, accounts } = fixtures;
         const params = TEST_DATA.RAFFLE_PARAMS.ERC1155;
 
-        const tx = await raffleContract
-          .connect(accounts.creator1)
-          .createRaffle(
-            params.prizeType,
-            mockERC1155.address,
-            (params as any).prizeAmount,
-            (params as any).prizeTokenId,
-            ethers.constants.AddressZero,
-            params.ticketPrice,
-            params.maxTicketsPerUser,
-            params.totalMaxTickets,
-            1,
-            params.duration
-          );
+        const tx = await raffleContract.connect(accounts.creator1).createRaffle(
+          params.prizeType,
+          mockERC1155.address,
+          (params as any).prizeAmount,
+          (params as any).prizeTokenId,
+          ethers.constants.AddressZero,
+          params.ticketPrice,
+          params.maxTicketsPerUser,
+          params.totalMaxTickets,
+          1,
+          params.duration,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
 
         const receipt = await tx.wait();
         const event = receipt.events?.find(
@@ -178,37 +175,35 @@ describe("RaffleCreation", function () {
 
         expect(await raffleContract.raffleCounter()).to.equal(0);
 
-        await raffleContract
-          .connect(accounts.creator1)
-          .createRaffle(
-            params.prizeType,
-            mockERC20.address,
-            params.prizeAmount,
-            0,
-            ethers.constants.AddressZero,
-            params.ticketPrice,
-            params.maxTicketsPerUser,
-            params.totalMaxTickets,
-            1,
-            params.duration
-          );
+        await raffleContract.connect(accounts.creator1).createRaffle(
+          params.prizeType,
+          mockERC20.address,
+          params.prizeAmount,
+          0,
+          ethers.constants.AddressZero,
+          params.ticketPrice,
+          params.maxTicketsPerUser,
+          params.totalMaxTickets,
+          1,
+          params.duration,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
 
         expect(await raffleContract.raffleCounter()).to.equal(1);
 
-        await raffleContract
-          .connect(accounts.creator2)
-          .createRaffle(
-            params.prizeType,
-            mockERC20.address,
-            params.prizeAmount,
-            0,
-            ethers.constants.AddressZero,
-            params.ticketPrice,
-            params.maxTicketsPerUser,
-            params.totalMaxTickets,
-            1,
-            params.duration
-          );
+        await raffleContract.connect(accounts.creator2).createRaffle(
+          params.prizeType,
+          mockERC20.address,
+          params.prizeAmount,
+          0,
+          ethers.constants.AddressZero,
+          params.ticketPrice,
+          params.maxTicketsPerUser,
+          params.totalMaxTickets,
+          1,
+          params.duration,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
 
         expect(await raffleContract.raffleCounter()).to.equal(2);
       });
@@ -218,27 +213,27 @@ describe("RaffleCreation", function () {
         const params = TEST_DATA.RAFFLE_PARAMS.ERC20;
 
         await expect(
-          raffleContract
-            .connect(accounts.creator1)
-            .createRaffle(
-              params.prizeType,
-              mockERC20.address,
-              params.prizeAmount,
-              0,
-              ethers.constants.AddressZero,
-              params.ticketPrice,
-              params.maxTicketsPerUser,
-              params.totalMaxTickets,
-              1,
-              params.duration
-            )
+          raffleContract.connect(accounts.creator1).createRaffle(
+            params.prizeType,
+            mockERC20.address,
+            params.prizeAmount,
+            0,
+            ethers.constants.AddressZero,
+            params.ticketPrice,
+            params.maxTicketsPerUser,
+            params.totalMaxTickets,
+            1,
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
+          )
         )
           .to.emit(raffleContract, "RaffleCreated")
           .withArgs(
             1,
             accounts.creator1.address,
             mockERC20.address,
-            params.prizeAmount
+            params.prizeAmount,
+            ethers.constants.AddressZero // whitelistNftContract
           );
       });
     });
@@ -259,7 +254,8 @@ describe("RaffleCreation", function () {
             params.maxTicketsPerUser,
             params.totalMaxTickets,
             1,
-            params.duration
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
           )
         ).to.be.revertedWith("Invalid ticket price");
       });
@@ -279,7 +275,8 @@ describe("RaffleCreation", function () {
             params.maxTicketsPerUser,
             params.totalMaxTickets,
             0,
-            0 // Invalid duration
+            0, // Invalid duration
+            ethers.constants.AddressZero // whitelistNftContract
           )
         ).to.be.revertedWith("Invalid duration");
       });
@@ -299,7 +296,8 @@ describe("RaffleCreation", function () {
             0, // Invalid max tickets per user
             params.totalMaxTickets,
             1,
-            params.duration
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
           )
         ).to.be.revertedWith("Invalid max tickets per user");
       });
@@ -314,20 +312,19 @@ describe("RaffleCreation", function () {
           .approve(raffleContract.address, 0);
 
         await expect(
-          raffleContract
-            .connect(accounts.creator1)
-            .createRaffle(
-              params.prizeType,
-              mockERC20.address,
-              params.prizeAmount,
-              0,
-              ethers.constants.AddressZero,
-              params.ticketPrice,
-              params.maxTicketsPerUser,
-              params.totalMaxTickets,
-              0,
-              params.duration
-            )
+          raffleContract.connect(accounts.creator1).createRaffle(
+            params.prizeType,
+            mockERC20.address,
+            params.prizeAmount,
+            0,
+            ethers.constants.AddressZero,
+            params.ticketPrice,
+            params.maxTicketsPerUser,
+            params.totalMaxTickets,
+            0,
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
+          )
         ).to.be.reverted;
       });
 
@@ -346,7 +343,8 @@ describe("RaffleCreation", function () {
             params.maxTicketsPerUser,
             params.totalMaxTickets,
             1,
-            params.duration
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
           )
         ).to.be.reverted;
       });
@@ -366,7 +364,8 @@ describe("RaffleCreation", function () {
             params.maxTicketsPerUser,
             params.totalMaxTickets,
             1,
-            params.duration
+            params.duration,
+            ethers.constants.AddressZero // whitelistNftContract
           )
         ).to.be.reverted;
       });

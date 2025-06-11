@@ -1,7 +1,7 @@
 import hre from "hardhat";
 
 async function main() {
-  const contractAddress = "0x47B393684E5D72b004b8aDB0645F5377374a4f6a";
+  const contractAddress = "0xb45303569f4751B4b3d17EA1Ad4D61E60140DCcF";
   const constructorArgs = [6666]; // The seed value used in deployment
 
   console.log("Verifying NativeVRF contract...");

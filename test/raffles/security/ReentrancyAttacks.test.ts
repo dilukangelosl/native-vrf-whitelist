@@ -117,8 +117,9 @@ describe("ReentrancyAttacks", function () {
               ethers.utils.parseEther("0.1"),
               10,
               100,
-              3600
-            );
+              3600,
+          ethers.constants.AddressZero // whitelistNftContract
+        );
         } catch (error) {
           // Expected to fail due to reentrancy protection
         }
@@ -297,7 +298,7 @@ describe("ReentrancyAttacks", function () {
 
       // Non-owner should not be able to change fees
       await expect(
-        raffleContract.connect(accounts.buyer1).updateFeePercentage(10)
+        raffleContract.connect(accounts.buyer1).updateFeePercentage(1000)
       ).to.be.reverted;
     });
 
@@ -357,7 +358,8 @@ describe("ReentrancyAttacks", function () {
           10,
           100,
           1,
-          3600
+          3600,
+          ethers.constants.AddressZero // whitelistNftContract
         );
 
       const receipt = await highPriceRaffleId.wait();

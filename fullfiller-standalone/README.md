@@ -88,18 +88,69 @@ Run the application:
 pnpm start
 ```
 
-### Docker (Optional)
+### Docker
 
-You can also run this in a Docker container:
+The application includes Docker support for easy deployment and containerization.
 
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
-COPY . .
-CMD ["pnpm", "start"]
+#### Building the Docker Image
+
+1. Build the Docker image:
+```bash
+docker build -t vrf-fulfiller .
 ```
+
+#### Running the Container
+
+1. Run with environment variables:
+```bash
+docker run -d \
+  --name vrf-fulfiller \
+  --restart unless-stopped \
+  -e NETWORK=mainnet \
+  -e RPC_URL=https://your-rpc-endpoint \
+  -e PRIVATE_KEY=your_private_key \
+  -e CONTRACT_ADDRESS=your_contract_address \
+  -e INTERVAL_MS=5000 \
+  -v $(pwd)/../addressList:/app/addressList:ro \
+  vrf-fulfiller
+```
+
+2. Or run interactively for testing:
+```bash
+docker run -it --rm \
+  -e NETWORK=localhost \
+  -e RPC_URL=http://host.docker.internal:8545 \
+  -e PRIVATE_KEY=your_private_key \
+  -e CONTRACT_ADDRESS=your_contract_address \
+  vrf-fulfiller
+```
+
+#### Managing the Container
+
+View logs:
+```bash
+docker logs -f vrf-fulfiller
+```
+
+Stop the container:
+```bash
+docker stop vrf-fulfiller
+```
+
+Remove the container:
+```bash
+docker rm vrf-fulfiller
+```
+
+#### Docker Environment Variables
+
+All environment variables from the `.env` file can be passed to the Docker container:
+
+- `NETWORK`: Network name
+- `RPC_URL`: RPC endpoint URL
+- `PRIVATE_KEY`: Fulfiller wallet private key
+- `CONTRACT_ADDRESS`: NativeVRF contract address
+- `INTERVAL_MS`: Polling interval in milliseconds
 
 ## How It Works
 

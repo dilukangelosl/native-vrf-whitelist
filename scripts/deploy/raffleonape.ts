@@ -4,7 +4,7 @@ import addressUtils from "../../utils/addressUtils";
 async function main() {
   const contract = await ethers.getContractFactory("RaffleOnape");
   const deployedContract = await contract.deploy(
-    "0x47B393684E5D72b004b8aDB0645F5377374a4f6a"
+    "0xb45303569f4751B4b3d17EA1Ad4D61E60140DCcF"
   );
 
   console.log({ contract: deployedContract.address });
@@ -26,7 +26,7 @@ async function main() {
   try {
     await hre.run("verify:verify", {
       address: deployedContract.address,
-      constructorArguments: ["0x78f7fAF4F40A93c12314A44d35F901306Dd5673B"],
+      constructorArguments: ["0xb45303569f4751B4b3d17EA1Ad4D61E60140DCcF"],
       network: "apechain",
     });
 
