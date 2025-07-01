@@ -1,0 +1,20 @@
+{
+  "name": "gacha-leaderboard-subgraph",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ gacha-leaderboard",
+    "create-local": "graph create --node http://35.209.212.101:8020/ gacha-leaderboard",
+    "remove-local": "graph remove --node http://35.209.212.101:8020/ gacha-leaderboard",
+    "deploy-server": "graph deploy --node http://35.209.212.101:8020/ --ipfs http://35.209.212.101:5001 gacha-leaderboard",
+    "test": "graph test"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.86.0",
+    "@graphprotocol/graph-ts": "0.32.0"
+  },
+  "devDependencies": { 
+    "matchstick-as": "0.5.0" 
+  }
+}

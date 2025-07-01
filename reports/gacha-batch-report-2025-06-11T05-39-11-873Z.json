@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-11T05:39:11.873Z",
+    "totalResults": 100,
+    "avgBatchSize": 5
+  },
+  "distribution": {
+    "Common": {
+      "count": 45,
+      "percentage": "45.00"
+    },
+    "Uncommon": {
+      "count": 36,
+      "percentage": "36.00"
+    },
+    "Rare": {
+      "count": 15,
+      "percentage": "15.00"
+    },
+    "Epic": {
+      "count": 3,
+      "percentage": "3.00"
+    },
+    "Legendary": {
+      "count": 1,
+      "percentage": "1.00"
+    },
+    "Mythic": {
+      "count": 0,
+      "percentage": "0.00"
+    },
+    "Eternal": {
+      "count": 0,
+      "percentage": "0.00"
+    }
+  }
+}

@@ -110,7 +110,7 @@ export async function createSampleRaffle(
     type === "ERC721"
       ? 0
       : type === "ERC20"
-      ? params.prizeAmount
+      ? (params as any).prizeAmount
       : (params as any).prizeAmount;
   const prizeTokenId =
     type === "ERC721"

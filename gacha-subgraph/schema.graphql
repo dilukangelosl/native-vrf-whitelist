@@ -1,0 +1,136 @@
+# User entity to track players in the leaderboard
+type User @entity {
+  id: Bytes! # address
+  totalPoints: BigInt! # total points earned from burning tokens
+  totalBurns: BigInt! # total number of tokens burned
+  flickerBurns: BigInt! # token id 1 burns
+  echoBurns: BigInt! # token id 2 burns  
+  blazeBurns: BigInt! # token id 3 burns
+  shadowflameBurns: BigInt! # token id 4 burns
+  createdAt: BigInt!
+  lastBurnAt: BigInt!
+  
+  # Relations
+  burnEvents: [BurnEvent!]! @derivedFrom(field: "user")
+  gachaRequests: [GachaRequest!]! @derivedFrom(field: "user")
+}
+
+# Individual burn event tracking
+type BurnEvent @entity {
+  id: Bytes! # transaction hash + log index
+  user: User!
+  shardTokenId: BigInt! # 1, 2, 3, or 4
+  quantity: BigInt! # number of tokens burned
+  pointsEarned: BigInt! # points earned from this burn
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  vrfRequestId: BigInt! # associated VRF request
+}
+
+# Gacha request tracking
+type GachaRequest @entity {
+  id: Bytes! # VRF request ID as bytes
+  vrfRequestId: BigInt!
+  user: User!
+  shardTokenId: BigInt!
+  quantity: BigInt!
+  pointsEarned: BigInt!
+  fulfilled: Boolean!
+  resultTokenIds: [BigInt!]! # minted token IDs
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  fulfilledAt: BigInt # timestamp when fulfilled
+  fulfilledBlockNumber: BigInt # block when fulfilled
+  fulfilledTransactionHash: Bytes # transaction hash when fulfilled
+}
+
+# Gacha fulfillment event
+type GachaFulfillment @entity {
+  id: Bytes! # transaction hash + log index
+  vrfRequestId: BigInt!
+  user: User!
+  shardTokenId: BigInt!
+  quantity: BigInt!
+  resultTokenIds: [BigInt!]!
+  resultRarities: [BigInt!]! # rarity enum values
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Token statistics by type
+type TokenStats @entity {
+  id: Bytes! # token ID as bytes (1, 2, 3, 4)
+  tokenId: BigInt!
+  tokenName: String! # Flicker, Echo, Blaze, Shadowflame
+  pointsPerBurn: BigInt! # 1, 2, 10, 50
+  totalBurned: BigInt! # total quantity burned
+  totalBurns: BigInt! # total number of burn events
+  totalPointsEarned: BigInt! # total points generated from this token type
+  uniqueBurners: BigInt! # number of unique users who burned this token
+}
+
+# Global statistics
+type GlobalStats @entity {
+  id: Bytes! # singleton - always "global_stats"
+  totalUsers: BigInt!
+  totalBurnEvents: BigInt!
+  totalTokensBurned: BigInt!
+  totalPointsEarned: BigInt!
+  totalGachaRequests: BigInt!
+  totalGachaFulfillments: BigInt!
+  totalRelicsMinted: BigInt!
+  
+  # Token-specific totals
+  flickerBurned: BigInt! # token id 1
+  echoBurned: BigInt! # token id 2
+  blazeBurned: BigInt! # token id 3
+  shadowflameBurned: BigInt! # token id 4
+  
+  # Points by token type
+  flickerPoints: BigInt!
+  echoPoints: BigInt!
+  blazePoints: BigInt!
+  shadowflamePoints: BigInt!
+}
+
+# Daily statistics for analytics
+type DailyStats @entity {
+  id: Bytes! # date as bytes (YYYY-MM-DD)
+  date: BigInt! # timestamp of start of day
+  tokensBurned: BigInt!
+  burnEvents: BigInt!
+  pointsEarned: BigInt!
+  uniqueUsers: BigInt!
+  gachaRequests: BigInt!
+  gachaFulfillments: BigInt!
+  relicsMinted: BigInt!
+}
+
+# Leaderboard entry (top users by points)
+type LeaderboardEntry @entity {
+  id: Bytes! # user address
+  user: User!
+  rank: BigInt! # calculated rank
+  totalPoints: BigInt!
+  totalBurns: BigInt!
+  flickerBurns: BigInt! # token id 1 burns
+  echoBurns: BigInt! # token id 2 burns
+  blazeBurns: BigInt! # token id 3 burns
+  shadowflameBurns: BigInt! # token id 4 burns
+  updatedAt: BigInt!
+}
+
+# Hourly statistics for detailed analytics
+type HourlyStats @entity {
+  id: Bytes! # hour timestamp as bytes
+  hour: BigInt! # timestamp of start of hour
+  tokensBurned: BigInt!
+  burnEvents: BigInt!
+  pointsEarned: BigInt!
+  uniqueUsers: BigInt!
+  gachaRequests: BigInt!
+  gachaFulfillments: BigInt!
+}

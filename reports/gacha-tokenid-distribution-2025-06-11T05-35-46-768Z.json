@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-11T05:35:46.767Z",
+    "totalTokenIds": 4,
+    "burnsPerTokenId": {
+      "1": 250,
+      "2": 250,
+      "3": 250,
+      "4": 250
+    },
+    "totalBurns": 1000
+  },
+  "tokenAnalysis": {
+    "1": {
+      "totalBurns": 250,
+      "rarityDistribution": {
+        "Common": 150,
+        "Uncommon": 82,
+        "Rare": 15,
+        "Epic": 3,
+        "Legendary": 0,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "percentageDistribution": {
+        "Common": 60,
+        "Uncommon": 32.8,
+        "Rare": 6,
+        "Epic": 1.2,
+        "Legendary": 0,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "relicTokenIds": {
+        "ranges": {
+          "Common": 182,
+          "Uncommon": 18,
+          "Rare": 0,
+          "Epic": 0,
+          "Legendary": 0,
+          "Mythic": 0,
+          "Eternal": 0
+        },
+        "counts": {}
+      }
+    },
+    "2": {
+      "totalBurns": 250,
+      "rarityDistribution": {
+        "Common": 0,
+        "Uncommon": 68,
+        "Rare": 135,
+        "Epic": 45,
+        "Legendary": 2,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "percentageDistribution": {
+        "Common": 0,
+        "Uncommon": 27.2,
+        "Rare": 54,
+        "Epic": 18,
+        "Legendary": 0.8,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "relicTokenIds": {
+        "ranges": {
+          "Common": 18,
+          "Uncommon": 150,
+          "Rare": 2,
+          "Epic": 0,
+          "Legendary": 0,
+          "Mythic": 0,
+          "Eternal": 0
+        },
+        "counts": {}
+      }
+    },
+    "3": {
+      "totalBurns": 250,
+      "rarityDistribution": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 102,
+        "Legendary": 146,
+        "Mythic": 2,
+        "Eternal": 0
+      },
+      "percentageDistribution": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 40.8,
+        "Legendary": 58.4,
+        "Mythic": 0.8,
+        "Eternal": 0
+      },
+      "relicTokenIds": {
+        "ranges": {
+          "Common": 0,
+          "Uncommon": 52,
+          "Rare": 148,
+          "Epic": 0,
+          "Legendary": 0,
+          "Mythic": 0,
+          "Eternal": 0
+        },
+        "counts": {}
+      }
+    },
+    "4": {
+      "totalBurns": 250,
+      "rarityDistribution": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 0,
+        "Legendary": 2,
+        "Mythic": 148,
+        "Eternal": 100
+      },
+      "percentageDistribution": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 0,
+        "Legendary": 0.8,
+        "Mythic": 59.2,
+        "Eternal": 40
+      },
+      "relicTokenIds": {
+        "ranges": {
+          "Common": 0,
+          "Uncommon": 0,
+          "Rare": 98,
+          "Epic": 100,
+          "Legendary": 0,
+          "Mythic": 0,
+          "Eternal": 0
+        },
+        "counts": {}
+      }
+    }
+  },
+  "expectedVsActual": {
+    "1": {
+      "expected": {
+        "Common": 69,
+        "Uncommon": 25,
+        "Rare": 5,
+        "Epic": 1,
+        "Legendary": 0,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "actual": {
+        "Common": 60,
+        "Uncommon": 32.8,
+        "Rare": 6,
+        "Epic": 1.2,
+        "Legendary": 0,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "variance": {
+        "Common": 9,
+        "Uncommon": 7.8,
+        "Rare": 1,
+        "Epic": 0.2,
+        "Legendary": 0,
+        "Mythic": 0,
+        "Eternal": 0
+      }
+    },
+    "2": {
+      "expected": {
+        "Common": 20,
+        "Uncommon": 49,
+        "Rare": 25,
+        "Epic": 5,
+        "Legendary": 1,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "actual": {
+        "Common": 0,
+        "Uncommon": 27.2,
+        "Rare": 54,
+        "Epic": 18,
+        "Legendary": 0.8,
+        "Mythic": 0,
+        "Eternal": 0
+      },
+      "variance": {
+        "Common": 20,
+        "Uncommon": 21.8,
+        "Rare": 29,
+        "Epic": 13,
+        "Legendary": 0.2,
+        "Mythic": 0,
+        "Eternal": 0
+      }
+    },
+    "3": {
+      "expected": {
+        "Common": 0,
+        "Uncommon": 20,
+        "Rare": 49,
+        "Epic": 25,
+        "Legendary": 5,
+        "Mythic": 1,
+        "Eternal": 0
+      },
+      "actual": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 40.8,
+        "Legendary": 58.4,
+        "Mythic": 0.8,
+        "Eternal": 0
+      },
+      "variance": {
+        "Common": 0,
+        "Uncommon": 20,
+        "Rare": 49,
+        "Epic": 15.8,
+        "Legendary": 53.4,
+        "Mythic": 0.2,
+        "Eternal": 0
+      }
+    },
+    "4": {
+      "expected": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 20,
+        "Epic": 49,
+        "Legendary": 25,
+        "Mythic": 5,
+        "Eternal": 1
+      },
+      "actual": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 0,
+        "Epic": 0,
+        "Legendary": 0.8,
+        "Mythic": 59.2,
+        "Eternal": 40
+      },
+      "variance": {
+        "Common": 0,
+        "Uncommon": 0,
+        "Rare": 20,
+        "Epic": 49,
+        "Legendary": 24.2,
+        "Mythic": 54.2,
+        "Eternal": 39
+      }
+    }
+  },
+  "summary": {}
+}

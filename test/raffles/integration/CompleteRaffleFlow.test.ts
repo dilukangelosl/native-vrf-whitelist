@@ -540,7 +540,7 @@ describe("CompleteRaffleFlow", function () {
         expect(raffle2.winner).to.not.equal(ethers.constants.AddressZero);
 
         console.log("=== TEST COMPLETED SUCCESSFULLY ===");
-      } catch (error) {
+      } catch (error: any) {
         console.error("=== TEST FAILED ===");
         console.error("Error:", error.message);
         throw error;

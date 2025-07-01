@@ -1,0 +1,40 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Gacha
+    network: apechain
+    source:
+      address: "0x7D4EE498fd49bcDBB9275F27feC4233932e08d03"
+      abi: Gacha
+      startBlock: 18221935
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - BurnEvent
+        - GachaRequest
+        - GachaFulfillment
+        - TokenStats
+        - GlobalStats
+        - DailyStats
+        - LeaderboardEntry
+        - HourlyStats
+      abis:
+        - name: Gacha
+          file: ./abis/contract.json
+      eventHandlers:
+        - event: GachaRequested(indexed address,indexed uint256,uint256,uint256)
+          handler: handleGachaRequested
+        - event: GachaFulfilled(indexed address,indexed uint256,uint256,uint256,uint256[],uint8[])
+          handler: handleGachaFulfilled
+        - event: Paused(address)
+          handler: handlePaused
+        - event: Unpaused(address)
+          handler: handleUnpaused
+      file: ./src/gacha-mapping.ts
