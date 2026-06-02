@@ -325,14 +325,23 @@ describe("OtherRelicReforging", function () {
       await expect(reforging.connect(user1).reforgeLegendary(ids)).to.be.reverted; // InvalidRelicCount
     });
 
-    it("reverts InvalidRarityForReforge when input is not Legendary", async function () {
-      const ids = await mintRelics(user1, rarityValueForTier(Rarity.Epic), 3);
-      await expect(reforging.connect(user1).reforgeLegendary(ids)).to.be.reverted; // InvalidRarityForReforge
+    it("accepts 3 Legendary relics of different types", async function () {
+      const ids = [
+        (await mintRelics(user1, rarityValueForTier(Rarity.Legendary, 0), 1))[0],
+        (await mintRelics(user1, rarityValueForTier(Rarity.Legendary, 1), 1))[0],
+        (await mintRelics(user1, rarityValueForTier(Rarity.Legendary, 2), 1))[0],
+      ];
+      await expect(reforging.connect(user1).reforgeLegendary(ids)).to.not.be.reverted;
     });
 
-    it("reverts InvalidRarityForReforge when input is Mythic", async function () {
+    it("reverts InvalidRarityForReforge when input is not Legendary tier", async function () {
+      const ids = await mintRelics(user1, rarityValueForTier(Rarity.Epic), 3);
+      await expect(reforging.connect(user1).reforgeLegendary(ids)).to.be.reverted;
+    });
+
+    it("reverts InvalidRarityForReforge when input is Mythic (wrong tier)", async function () {
       const ids = await mintRelics(user1, rarityValueForTier(Rarity.Mythic), 3);
-      await expect(reforging.connect(user1).reforgeLegendary(ids)).to.be.reverted; // InvalidRarityForReforge
+      await expect(reforging.connect(user1).reforgeLegendary(ids)).to.be.reverted;
     });
 
     it("reverts when paused", async function () {
@@ -368,14 +377,23 @@ describe("OtherRelicReforging", function () {
       await expect(reforging.connect(user1).reforgeMythic(ids)).to.be.reverted; // InvalidRelicCount
     });
 
-    it("reverts InvalidRarityForReforge when input is not Mythic", async function () {
-      const ids = await mintRelics(user1, rarityValueForTier(Rarity.Legendary), 3);
-      await expect(reforging.connect(user1).reforgeMythic(ids)).to.be.reverted; // InvalidRarityForReforge
+    it("accepts 3 Mythic relics of different types", async function () {
+      const ids = [
+        (await mintRelics(user1, rarityValueForTier(Rarity.Mythic, 0), 1))[0],
+        (await mintRelics(user1, rarityValueForTier(Rarity.Mythic, 1), 1))[0],
+        (await mintRelics(user1, rarityValueForTier(Rarity.Mythic, 2), 1))[0],
+      ];
+      await expect(reforging.connect(user1).reforgeMythic(ids)).to.not.be.reverted;
     });
 
-    it("reverts InvalidRarityForReforge when input is Eternal", async function () {
+    it("reverts InvalidRarityForReforge when input is not Mythic tier", async function () {
+      const ids = await mintRelics(user1, rarityValueForTier(Rarity.Legendary), 3);
+      await expect(reforging.connect(user1).reforgeMythic(ids)).to.be.reverted;
+    });
+
+    it("reverts InvalidRarityForReforge when input is Eternal (wrong tier)", async function () {
       const ids = await mintRelics(user1, rarityValueForTier(Rarity.Eternal), 3);
-      await expect(reforging.connect(user1).reforgeMythic(ids)).to.be.reverted; // InvalidRarityForReforge
+      await expect(reforging.connect(user1).reforgeMythic(ids)).to.be.reverted;
     });
 
     it("reverts when paused", async function () {

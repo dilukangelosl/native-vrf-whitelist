@@ -176,7 +176,7 @@ contract OtherRelicReforging is Ownable, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @notice Burn exactly 3 Legendary relics of the same type.
+     * @notice Burn exactly 3 Legendary relics (any mix of Legendary types).
      *         40% → Legendary, 60% → Mythic.
      */
     function reforgeLegendary(uint256[] calldata relicIds)
@@ -187,15 +187,14 @@ contract OtherRelicReforging is Ownable, ReentrancyGuard, Pausable {
     {
         if (relicIds.length != 3) revert InvalidRelicCount();
 
-        Rarity base = _validateAndBurnRelics(relicIds);
-        if (base != Rarity.Legendary) revert InvalidRarityForReforge(base);
+        _validateAndBurnRelicsByTier(relicIds, Rarity.Legendary);
 
         requestId = _createRequest(ReforgeType.Legendary, Rarity.Legendary, 3);
         emit ReforgeBurned(msg.sender, requestId, ReforgeType.Legendary, relicIds, block.number);
     }
 
     /**
-     * @notice Burn exactly 3 Mythic relics of the same type.
+     * @notice Burn exactly 3 Mythic relics (any mix of Mythic types).
      *         40% → Mythic, 60% → Eternal.
      */
     function reforgeMythic(uint256[] calldata relicIds)
@@ -206,8 +205,7 @@ contract OtherRelicReforging is Ownable, ReentrancyGuard, Pausable {
     {
         if (relicIds.length != 3) revert InvalidRelicCount();
 
-        Rarity base = _validateAndBurnRelics(relicIds);
-        if (base != Rarity.Mythic) revert InvalidRarityForReforge(base);
+        _validateAndBurnRelicsByTier(relicIds, Rarity.Mythic);
 
         requestId = _createRequest(ReforgeType.Mythic, Rarity.Mythic, 3);
         emit ReforgeBurned(msg.sender, requestId, ReforgeType.Mythic, relicIds, block.number);
@@ -373,6 +371,33 @@ contract OtherRelicReforging is Ownable, ReentrancyGuard, Pausable {
         }
 
         return baseRarity;
+    }
+
+    /// @dev Validates and burns relics enforcing only rarity tier — NOT exact type.
+    ///      Used by reforgeLegendary and reforgeMythic so players can combine any
+    ///      mix of types within the same tier.
+    function _validateAndBurnRelicsByTier(
+        uint256[] calldata relicIds,
+        Rarity             requiredRarity
+    ) internal {
+        uint256 count = relicIds.length;
+
+        for (uint256 i = 0; i < count; i++) {
+            for (uint256 j = i + 1; j < count; j++) {
+                if (relicIds[i] == relicIds[j]) revert DuplicateRelic(relicIds[i]);
+            }
+        }
+
+        for (uint256 i = 0; i < count; i++) {
+            if (otherRelics.ownerOf(relicIds[i]) != msg.sender)
+                revert NotRelicOwner(relicIds[i]);
+            Rarity r = _rarityFromValue(otherRelics.tokenRarity(relicIds[i]));
+            if (r != requiredRarity) revert InvalidRarityForReforge(r);
+        }
+
+        for (uint256 i = 0; i < count; i++) {
+            otherRelics.transferFrom(msg.sender, DEAD_ADDRESS, relicIds[i]);
+        }
     }
 
     // -------------------------------------------------------------------------
