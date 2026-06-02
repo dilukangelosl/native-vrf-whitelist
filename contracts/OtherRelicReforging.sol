@@ -362,7 +362,7 @@ contract OtherRelicReforging is Ownable, ReentrancyGuard, Pausable {
             if (rv != firstRarityValue) {
                 Rarity r = _rarityFromValue(rv);
                 if (r != baseRarity) revert InconsistentRarity();
-                revert InconsistentRelicType();
+                // Same tier, different type: allowed
             }
         }
 

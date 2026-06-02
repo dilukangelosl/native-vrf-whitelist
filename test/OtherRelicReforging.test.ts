@@ -246,12 +246,12 @@ describe("OtherRelicReforging", function () {
       ).to.be.reverted; // InconsistentRarity
     });
 
-    it("reverts with InconsistentRelicType when same tier but different type", async function () {
+    it("accepts same tier but different type (mixed-type reforge)", async function () {
       const id1 = await mintRelics(user1, 1, 1); // Common type 1
       const id2 = await mintRelics(user1, 2, 1); // Common type 2
       await expect(
         reforging.connect(user1).reforge([id1[0], id2[0]])
-      ).to.be.reverted; // InconsistentRelicType
+      ).to.not.be.reverted;
     });
 
     it("reverts with InvalidRarityForReforge for Legendary input", async function () {
